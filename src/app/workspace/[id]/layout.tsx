@@ -139,7 +139,7 @@ export const WorkspaceSidebar = ({ activeTab, onTabChange }: WorkspaceSidebarPro
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
 
-          if (tab.invisible) { return(<></>); }
+          if (tab.invisible) { return(<div key={tab.id}></div>); }
 
           return (
             <button
