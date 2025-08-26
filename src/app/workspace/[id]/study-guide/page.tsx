@@ -26,7 +26,7 @@ export default function StudyGuidePanel() {
                 time: Date.now(),
                 blocks: [
                     {
-                        type: "header",
+                        type: "header although",
                         data: {
                             text: "Chapter 5: Calculus Fundamentals",
                             level: 2,
@@ -122,15 +122,22 @@ export default function StudyGuidePanel() {
                     byUrl: 'http://localhost:8008/fetchUrl', // Your endpoint that provides uploading by Url
                   }
                 }
-              }
-            }
+              },
+            },
+            readOnly: editingId !== guide.id,
           });
+        } else {
+            // Update the readOnly state for existing instances
+            const editor = editorRef.current[guide.id];
+            editor.isReady.then(() => {
+                editor.readOnly.toggle(editingId !== guide.id);
+            });
         }
       });
 
       return () => {
       };
-    }, [guides]);
+    }, [guides, editingId]);
 
     return (
         <div className="space-y-4">
