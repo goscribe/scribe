@@ -26,7 +26,7 @@ export default function StudyGuidePanel() {
                 time: Date.now(),
                 blocks: [
                     {
-                        type: "header although",
+                        type: "header",
                         data: {
                             text: "Chapter 5: Calculus Fundamentals",
                             level: 2,
