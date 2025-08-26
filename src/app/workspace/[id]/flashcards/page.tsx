@@ -128,6 +128,19 @@ export default function FlashcardsPanel() {
                   </div>
                 </CardContent>
               </div>
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteCard(card.id);
+                    }}
+                  >
+                  <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
             </Card>
           );
         })}

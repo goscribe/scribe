@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Plus, Edit3 } from "lucide-react";
+import {Plus, Edit3, Trash2} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import EditorJS from "@editorjs/editorjs";
@@ -52,6 +52,10 @@ export default function StudyGuidePanel() {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const editorRef = useRef<Record<string, EditorJS>>({});
+
+    const deleteGuide = async (id: string) => {
+        setGuides(guides.filter(guide => guide.id !== id));
+    }
 
     const handleEdit = (guide: StudyGuide) => {
         setEditingId(guide.id);
@@ -164,6 +168,18 @@ export default function StudyGuidePanel() {
                   Modified {guide.lastModified}
                 </span>
                                 {editingId === guide.id ? (
+                                    <>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-8 w-8 p-0"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteGuide(guide.id);
+                                        }}
+                                    >
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
                                     <Button
                                         size="sm"
                                         variant="outline"
@@ -171,6 +187,7 @@ export default function StudyGuidePanel() {
                                     >
                                         Save
                                     </Button>
+                                    </>
                                 ) : (
                                     <Button
                                         size="sm"
