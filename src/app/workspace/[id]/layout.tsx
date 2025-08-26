@@ -1,6 +1,17 @@
 "use client";
 
-import { BookOpen, Brain, FileText, MessageSquare, Podcast, ChevronDown, Search, Plus, FolderOpen } from "lucide-react";
+import {
+    BookOpen,
+    Brain,
+    FileText,
+    MessageSquare,
+    Podcast,
+    ChevronDown,
+    Search,
+    Plus,
+    FolderOpen,
+    InfoIcon
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import {
@@ -15,7 +26,7 @@ import { useParams, useRouter } from "next/navigation";
 import { MediaShelf } from "@/components/media-shelf";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export type WorkspaceTab = 'study-guide' | 'flashcards' | 'worksheet' | 'summaries' | 'podcasts';
+export type WorkspaceTab = 'def' | 'study-guide' | 'flashcards' | 'worksheet' | 'summaries' | 'podcasts';
 
 interface WorkspaceSidebarProps {
   activeTab: WorkspaceTab;
@@ -35,7 +46,13 @@ const mockNotes = [
 
 const tabs = [
   {
-    id: '' as WorkspaceTab,
+    id: 'def' as WorkspaceTab,
+    label: 'Default(You should not see this)',
+    icon: InfoIcon,
+    description: 'Invisible default tab',
+    invisible: true,
+  },{
+    id: 'study-guide' as WorkspaceTab,
     label: 'Study Guide',
     icon: BookOpen,
     description: 'AI-generated summaries and notes'
@@ -116,20 +133,22 @@ export const WorkspaceSidebar = ({ activeTab, onTabChange }: WorkspaceSidebarPro
         </DropdownMenu>
       </div>
 
-      
+
       <nav className="p-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          
+
+          if (tab.invisible) { return(<div key={tab.id}></div>); }
+
           return (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
                 "w-full flex items-start space-x-3 p-3 rounded-lg text-left transition-all duration-200",
-                isActive 
-                  ? "bg-primary/10 text-primary border border-primary/20" 
+                isActive
+                  ? "bg-primary/10 text-primary border border-primary/20"
                   : "hover:bg-muted/50 text-foreground"
               )}
             >
@@ -160,7 +179,7 @@ export const WorkspaceSidebar = ({ activeTab, onTabChange }: WorkspaceSidebarPro
 };
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>('study-guide');
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>('def');
   const router = useRouter();
   const { id } = useParams();
   const [isMediaOpen, setIsMediaOpen] = useState(false);

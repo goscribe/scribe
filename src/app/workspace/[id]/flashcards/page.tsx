@@ -66,8 +66,12 @@ export default function FlashcardsPanel() {
 
   const shuffleCards = () => {
     setCards([...cards].sort(() => Math.random() - 0.5));
-    setFlippedCards(new Set());
+    //setFlippedCards(new Set());
   };
+
+    const hideAnswers = () => {
+      setFlippedCards(new Set());
+    };
 
   return (
     <div className="space-y-4">
@@ -79,6 +83,10 @@ export default function FlashcardsPanel() {
           </p>
         </div>
         <div className="flex space-x-2">
+          <Button onClick={hideAnswers} size="sm" variant="outline">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Hide all answers
+          </Button>
           <Button onClick={shuffleCards} size="sm" variant="outline">
             <RotateCcw className="h-4 w-4 mr-2" />
             Shuffle
@@ -103,10 +111,23 @@ export default function FlashcardsPanel() {
           return (
             <Card
               key={card.id}
-              className="h-48 cursor-pointer card-hover group relative"
+              className={`h-48 cursor-pointer card-hover group relative perspective`}
               onClick={() => flipCard(card.id)}
             >
-              <CardContent className="p-4 h-full flex flex-col justify-center">
+              <div className={`flip-card-inner ${isFlipped ? "flipped" : ""}`}>
+                <CardContent className="flip-card-front p-4 h-full flex flex-col justify-center">
+                  <div className="text-center">
+                    <div className="text-xs text-muted-foreground mb-2">Question</div>
+                    <p className="text-sm leading-relaxed">{card.front}</p>
+                  </div>
+                </CardContent>
+                <CardContent className="flip-card-back p-4 h-full flex flex-col justify-center">
+                  <div className="text-center">
+                    <div className="text-xs text-muted-foreground mb-2">Answer</div>
+                    <p className="text-sm leading-relaxed">{card.back}</p>
+                  </div>
+                </CardContent>
+              </div>
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     size="sm"
@@ -117,25 +138,9 @@ export default function FlashcardsPanel() {
                       deleteCard(card.id);
                     }}
                   >
-                    <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-                
-                <div className="text-center">
-                  <div className="text-xs text-muted-foreground mb-2">
-                    {isFlipped ? 'Answer' : 'Question'}
-                  </div>
-                  <p className="text-sm leading-relaxed">
-                    {isFlipped ? card.back : card.front}
-                  </p>
-                </div>
-                
-                <div className="mt-4 text-center">
-                  <span className="text-xs text-primary/60">
-                    Click to {isFlipped ? 'show question' : 'reveal answer'}
-                  </span>
-                </div>
-              </CardContent>
             </Card>
           );
         })}
@@ -145,12 +150,12 @@ export default function FlashcardsPanel() {
         <Card className="border-dashed border-2 border-muted">
           <CardContent className="p-8 text-center">
             <p className="text-muted-foreground">No flashcards yet.</p>
-          <Button onClick={() => setIsCreateModalOpen(true)} className="mt-2" variant="outline">
-            Create your first flashcard
-          </Button>
+            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-2" variant="outline">
+              Create your first flashcard
+            </Button>
           </CardContent>
         </Card>
       )}
     </div>
   );
-};
+}
