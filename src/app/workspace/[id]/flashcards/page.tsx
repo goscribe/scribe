@@ -66,8 +66,12 @@ export default function FlashcardsPanel() {
 
   const shuffleCards = () => {
     setCards([...cards].sort(() => Math.random() - 0.5));
-    setFlippedCards(new Set());
+    //setFlippedCards(new Set());
   };
+
+    const hideAnswers = () => {
+      setFlippedCards(new Set());
+    };
 
   return (
     <div className="space-y-4">
@@ -79,6 +83,10 @@ export default function FlashcardsPanel() {
           </p>
         </div>
         <div className="flex space-x-2">
+          <Button onClick={hideAnswers} size="sm" variant="outline">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Hide all answers
+          </Button>
           <Button onClick={shuffleCards} size="sm" variant="outline">
             <RotateCcw className="h-4 w-4 mr-2" />
             Shuffle
