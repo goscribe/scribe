@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./index.css";
 import { Navbar } from "@/components/navbar";
+import Head from "next/head";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,6 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+          <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css"/>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mdgaziur/EditorJS-LaTeX@1.0.5/dist/editorjs-latex.bundle.css"/>
+          <script defer src="https://cdn.jsdelivr.net/gh/mdgaziur/EditorJS-LaTeX@1.0.5/dist/editorjs-latex.bundle-min.js"></script>
+          <title>HeadInjectionCompleted</title>
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background`}>
         <Navbar />
         {children}
