@@ -1,3 +1,11 @@
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+
 export default function Home() {
-    return <h1 className="text-3xl font-bold underline">Hello world!</h1>;
-}
+    const router = useRouter();
+    const params = useParams();
+    const workspaceId = params.id as string;
+    router.push(`/workspace/${workspaceId}/study-guide`);
+    return <span>loading...</span>;
+}   

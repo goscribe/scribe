@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Plus, Eye, Edit3, Play, Pause, Download, Calendar, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { trpc } from "@/lib/trpc";
 
 interface Podcast {
   id: string;
@@ -20,6 +22,39 @@ interface Podcast {
 }
 
 export default function PodcastsPanel() {
+  const router = useRouter();
+  const params = useParams();
+  const workspaceId = params.id as string;
+
+  const podcast = trpc.podcast.generateEpisode.useMutation();
+
+  const generatePodcast = async () => {
+    console.log("Generating podcast");
+
+    const result = await podcast.mutateAsync({
+      workspaceId,
+      podcastData: {
+        title: "Calculus Fundamentals",
+        content: "Introduction to derivatives and their applications",
+        description: "Introduction to derivatives and their applications do a 1 minute podcast",
+        voice: "alloy",
+        speed: 1.0,
+      }
+    })
+
+    console.log(result);
+
+    // setPodcasts([...podcasts, podcast])
+    // router.push(`/workspace/${workspaceId}/podcasts/${podcast.id}`)
+  }
+
+  useEffect(() => {
+    async function generate() {
+      await generatePodcast();
+    }
+    generate();
+  }, []);
+  
   const [podcasts, setPodcasts] = useState<Podcast[]>([
     {
       id: '1',
@@ -80,7 +115,7 @@ export default function PodcastsPanel() {
   };
 
   const openPodcast = (podcastId: string) => {
-    console.log('Opening podcast:', podcastId);
+    router.push(`/workspace/${workspaceId}/podcasts/${podcastId}`);
   };
 
   const getStatusColor = (status: string) => {

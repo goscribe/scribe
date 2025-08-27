@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Eye, Edit3, Calendar, Clock } from "lucide-react";
+import { Plus, Eye, Edit3, Calendar, Clock, Trash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +17,6 @@ export default function WorksheetPanel() {
   const params = useParams();
   const router = useRouter();
   const workspaceId = params.id as string;
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedWorksheet, setSelectedWorksheet] = useState<Worksheet | null>(null);
 
   // tRPC queries and mutations
   const { data: worksheets = [], isLoading, error, refetch } = trpc.worksheets.list.useQuery(
@@ -98,6 +94,11 @@ export default function WorksheetPanel() {
 
   const openEditPage = (worksheetId: string) => {
     router.push(`/workspace/${workspaceId}/worksheet/${worksheetId}/edit`);
+  };
+
+  const deleteWorksheet = (worksheetId: string) => {
+    deleteMutation.mutate({ id: worksheetId });
+    refetch();
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -197,7 +198,7 @@ export default function WorksheetPanel() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
-                      {worksheet.description}
+                      {worksheet.description || 'No description'}
                     </span>
                   </div>
                 </div>
@@ -248,6 +249,9 @@ export default function WorksheetPanel() {
                   >
                     <Edit3 className="h-4 w-4 mr-2" />
                     Edit
+                  </Button>
+                  <Button onClick={() => deleteWorksheet(worksheet.id)} size="sm" variant="destructive">
+                    <Trash className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>

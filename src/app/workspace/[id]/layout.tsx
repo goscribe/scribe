@@ -16,6 +16,7 @@ import { MediaShelf } from "@/components/media-shelf";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { trpc } from "@/lib/trpc";
 
 export type WorkspaceTab = 'def' | 'study-guide' | 'flashcards' | 'worksheet' | 'summaries' | 'podcasts';
 
@@ -203,37 +204,42 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { id } = useParams();
   const [isMediaOpen, setIsMediaOpen] = useState(false);
-  const [files, setFiles] = useState<MediaFile[]>(mockFiles);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileDelete = (fileId: string) => {
-    setFiles(files.filter(f => f.id !== fileId));
-  };
+  const { data: workspace, isLoading: workspaceLoading, error: workspaceError, refetch: refetchWorkspace } = trpc.workspace.get.useQuery({
+    id: id as string,
+  }, {
+    enabled: !!id,
+  });
 
-  const processFile = (file: File) => {
-    const newFile: MediaFile = {
-      id: Date.now().toString(),
-      name: file.name,
-      type: file.type.startsWith('audio/') ? 'audio' : 
-            file.type.startsWith('image/') ? 'image' :
-            file.name.endsWith('.pdf') ? 'pdf' :
-            file.name.endsWith('.docx') ? 'docx' :
-            file.name.endsWith('.pptx') ? 'ppt' : 'txt',
-      size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-      uploadedAt: new Date().toISOString().split('T')[0],
-    };
-    setFiles([newFile, ...files]);
-  };
+  const files = workspace?.uploads || []; // TODO: fix this
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadFileMutation = trpc.workspace.uploadFiles.useMutation();
+  const deleteFileMutation = trpc.workspace.deleteFiles.useMutation({
+    onSuccess: () => {
+      refetchWorkspace();
+    },
+  });
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      processFile(file);
-      setIsUploadOpen(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      try {
+        const result = await uploadFileMutation.mutateAsync({
+          files: [{
+            filename: file.name,
+            contentType: file.type,
+            size: file.size,
+          }],
+          id: id as string,
+        });
+
+        setIsUploadOpen(false);
+        
+        refetchWorkspace();
+      } catch (error) {
+        console.error('Error uploading file:', error);
       }
     }
   };
@@ -248,14 +254,15 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     setIsDragOver(false);
   };
 
+
+
+
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0) {
-      droppedFiles.forEach(processFile);
-      setIsUploadOpen(false);
-    }
+    setIsUploadOpen(false);
   };
 
   const handleUploadClick = () => {
@@ -364,7 +371,14 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             </div>
             
             <CollapsibleContent className="animate-accordion-down bg-white">
-              <MediaShelf files={files} onFileDelete={handleFileDelete} />
+              <MediaShelf files={files} onFileDelete={
+                async (fileId) => {
+                  deleteFileMutation.mutate({
+                    fileId: [fileId],
+                    id: id as string,
+                  });
+                }
+              } />
             </CollapsibleContent>
           </Collapsible>
         </div>

@@ -1,7 +1,7 @@
     "use client";
 
     import { useState, useEffect } from "react";
-    import { ArrowLeft, CheckCircle, Circle, Clock, Calendar, Edit3 } from "lucide-react";
+    import { ArrowLeft, CheckCircle, Clock, Calendar, Edit3 } from "lucide-react";
     import { Button } from "@/components/ui/button";
     import { Input } from "@/components/ui/input";
     import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +28,8 @@
       const [currentProblemIndex, setCurrentProblemIndex] = useState(0);
       const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
       const [completedProblems, setCompletedProblems] = useState<Set<string>>(new Set());
+      const [showAnswers, setShowAnswers] = useState(false);
+      const [incorrectAnswers, setIncorrectAnswers] = useState<Set<string>>(new Set());
 
       // Fetch worksheet data
       const { data: worksheet, isLoading, error } = trpc.worksheets.get.useQuery(
@@ -89,16 +91,38 @@
 
       const handleCompleteProblem = (problemId: string) => {
         const answer = userAnswers[problemId] || '';
+        const problem = worksheet.questions.find((q: WorksheetProblem) => q.id === problemId);
+        
+        if (!problem) return;
+        
+        // Check if answer is correct
+        const isCorrect = checkAnswer(answer, problem.answer || '', problem.type);
+        
+        // Only mark as completed if answer is correct
+        const completed = isCorrect === true;
+        
         updateProblemMutation.mutate({
           problemId,
-          completed: true,
+          completed,
           answer,
         });
-        setCompletedProblems(prev => new Set([...prev, problemId]));
         
-        // Auto-advance to next problem if not the last one
-        if (currentProblemIndex < worksheet.questions.length - 1) {
-          setCurrentProblemIndex(currentProblemIndex + 1);
+        if (completed) {
+          setCompletedProblems(prev => new Set([...prev, problemId]));
+          setIncorrectAnswers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(problemId);
+            return newSet;
+          });
+          
+          // Auto-advance to next problem if not the last one
+          if (currentProblemIndex < worksheet.questions.length - 1) {
+            setCurrentProblemIndex(currentProblemIndex + 1);
+          }
+        } else {
+          // Mark as incorrect and show error message
+          setIncorrectAnswers(prev => new Set([...prev, problemId]));
+          toast.error("Incorrect answer. Please try again.");
         }
       };
 
@@ -123,8 +147,59 @@
         }
       };
 
+      const checkAnswer = (userAnswer: string, correctAnswer: string, type: string) => {
+        if (!userAnswer.trim() || !correctAnswer.trim()) return null;
+        
+        const normalizedUser = userAnswer.trim().toLowerCase();
+        const normalizedCorrect = correctAnswer.trim().toLowerCase();
+        
+        switch (type) {
+          case 'MULTIPLE_CHOICE':
+            // For multiple choice, compare the selected option text
+            return normalizedUser === normalizedCorrect;
+          
+          case 'NUMERIC':
+            // For numeric answers, allow for small differences and different formats
+            const userNum = parseFloat(normalizedUser);
+            const correctNum = parseFloat(normalizedCorrect);
+            if (!isNaN(userNum) && !isNaN(correctNum)) {
+              return Math.abs(userNum - correctNum) < 0.01;
+            }
+            return normalizedUser === normalizedCorrect;
+          
+          case 'TRUE_FALSE':
+            // For true/false, be more flexible with variations
+            const userBool = normalizedUser === 'true' || normalizedUser === 't' || normalizedUser === 'yes';
+            const correctBool = normalizedCorrect === 'true' || normalizedCorrect === 't' || normalizedCorrect === 'yes';
+            return userBool === correctBool;
+          
+          default:
+            // For text-based answers, do exact comparison
+            return normalizedUser === normalizedCorrect;
+        }
+      };
+
+      const getAnswerStatus = (problem: WorksheetProblem) => {
+        const userAnswer = userAnswers[problem.id] || '';
+        const correctAnswer = problem.answer || '';
+        
+        if (!userAnswer.trim() || !correctAnswer.trim()) return null;
+        
+        const isCorrect = checkAnswer(userAnswer, correctAnswer, problem.type);
+        
+        if (isCorrect === null) return null;
+        
+        return {
+          isCorrect,
+          userAnswer,
+          correctAnswer,
+          type: problem.type
+        };
+      };
+
       const renderProblemInput = (problem: WorksheetProblem) => {
         const currentAnswer = userAnswers[problem.id] || '';
+        const isCompleted = completedProblems.has(problem.id);
 
         switch (problem.type) {
           case 'MULTIPLE_CHOICE':
@@ -133,10 +208,15 @@
                 value={currentAnswer}
                 onValueChange={(value) => handleAnswerChange(problem.id, value)}
                 className="space-y-3"
+                disabled={isCompleted}
               >
                 {problem.options?.map((option: string, index: number) => (
                   <div key={index} className="flex items-center space-x-3">
-                    <RadioGroupItem value={option} id={`option-${problem.id}-${index}`} />
+                    <RadioGroupItem 
+                      value={option} 
+                      id={`option-${problem.id}-${index}`}
+                      disabled={isCompleted}
+                    />
                     <Label htmlFor={`option-${problem.id}-${index}`} className="text-sm">{option}</Label>
                   </div>
                 ))}
@@ -149,10 +229,15 @@
                 value={currentAnswer}
                 onValueChange={(value) => handleAnswerChange(problem.id, value)}
                 className="space-y-3"
+                disabled={isCompleted}
               >
                 {['True', 'False'].map((option: string, index: number) => (
                   <div key={index} className="flex items-center space-x-3">
-                    <RadioGroupItem value={option} id={`option-${problem.id}-${index}`} />
+                    <RadioGroupItem 
+                      value={option} 
+                      id={`option-${problem.id}-${index}`}
+                      disabled={isCompleted}
+                    />
                     <Label htmlFor={`option-${problem.id}-${index}`} className="text-sm">{option}</Label>
                   </div>
                 ))}
@@ -170,6 +255,7 @@
                       value={currentAnswer}
                       onChange={(e) => handleAnswerChange(problem.id, e.target.value)}
                       className="flex-1"
+                      disabled={isCompleted}
                     />
                   </div>
                 ))}
@@ -181,6 +267,7 @@
                 placeholder="Fill in the blank"
                 value={currentAnswer}
                 onChange={(e) => handleAnswerChange(problem.id, e.target.value)}
+                disabled={isCompleted}
               />
             );
 
@@ -191,6 +278,7 @@
                 placeholder="Enter your answer"
                 value={currentAnswer}
                 onChange={(e) => handleAnswerChange(problem.id, e.target.value)}
+                disabled={isCompleted}
               />
             );
 
@@ -202,6 +290,7 @@
                 value={currentAnswer}
                 onChange={(e) => handleAnswerChange(problem.id, e.target.value)}
                 rows={3}
+                disabled={isCompleted}
               />
             );
         }
@@ -294,14 +383,23 @@
                 </div>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/workspace/${workspaceId}/worksheet/${worksheetId}/edit`)}
-            >
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAnswers(!showAnswers)}
+              >
+                {showAnswers ? 'Hide' : 'Show'} Answers
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/workspace/${workspaceId}/worksheet/${worksheetId}/edit`)}
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </div>
           </div>
 
           {/* Description */}
@@ -341,10 +439,18 @@
                     size="sm"
                     variant={index === currentProblemIndex ? "default" : "outline"}
                     onClick={() => setCurrentProblemIndex(index)}
-                    className="h-8 w-8 p-0"
+                    className={`h-8 w-8 p-0 ${
+                      completedProblems.has(problem.id) 
+                        ? 'bg-green-100 border-green-300 text-green-700 hover:bg-green-200' 
+                        : incorrectAnswers.has(problem.id)
+                        ? 'bg-red-100 border-red-300 text-red-700 hover:bg-red-200'
+                        : ''
+                    }`}
                   >
                     {completedProblems.has(problem.id) ? (
                       <CheckCircle className="h-4 w-4" />
+                    ) : incorrectAnswers.has(problem.id) ? (
+                      <span className="text-xs text-red-700">✗</span>
                     ) : (
                       <span className="text-xs">{index + 1}</span>
                     )}
@@ -382,7 +488,110 @@
                       userAnswer: progressData?.find(p => p.worksheetQuestionId === currentProblem.id)?.userAnswer || '',
                     })}
                   </div>
+                  
+                  {/* Incorrect Answer Warning */}
+                  {incorrectAnswers.has(currentProblem.id) && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <p className="text-sm font-medium text-red-800">
+                          Incorrect Answer
+                        </p>
+                      </div>
+                      <p className="text-sm text-red-700 mt-1">
+                        Your answer is not correct. Please review the question and try again.
+                      </p>
+                      <div className="mt-2 text-xs text-red-600">
+                        <strong>Tip:</strong> {(() => {
+                          switch (currentProblem.type) {
+                            case 'NUMERIC':
+                              return "Check your calculation and make sure to include units if required.";
+                            case 'TRUE_FALSE':
+                              return "Make sure you entered exactly 'True' or 'False'.";
+                            case 'MULTIPLE_CHOICE':
+                              return "Review the options carefully and select the best answer.";
+                            case 'TEXT':
+                              return "Check your spelling and make sure your answer is complete.";
+                            case 'FILL_IN_THE_BLANK':
+                              return "Be specific about the exact word or phrase expected.";
+                            case 'MATCHING':
+                              return "Make sure your matching pairs are correct.";
+                            default:
+                              return "Review your answer and try again.";
+                          }
+                        })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Answer Comparison */}
+                {showAnswers && currentProblem.answer && (
+                  <div className="mt-4 p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-base font-medium">Answer Check</Label>
+                      {(() => {
+                        const status = getAnswerStatus(currentProblem);
+                        if (!status) return null;
+                        
+                        return (
+                          <Badge 
+                            variant={status.isCorrect ? "default" : "destructive"}
+                            className={status.isCorrect ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                          >
+                            {status.isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                          </Badge>
+                        );
+                      })()}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Your Answer:</Label>
+                        <div className="mt-1 p-2 bg-background border rounded">
+                          <span className="text-sm">
+                            {userAnswers[currentProblem.id] || "No answer provided"}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Correct Answer:</Label>
+                        <div className="mt-1 p-2 bg-green-50 border border-green-200 rounded">
+                          <span className="text-sm text-green-800">
+                            {currentProblem.answer}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {(() => {
+                        const status = getAnswerStatus(currentProblem);
+                        if (!status || status.isCorrect) return null;
+                        
+                        return (
+                          <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+                            <p className="text-sm text-amber-800">
+                              <strong>Tip:</strong> {(() => {
+                                switch (currentProblem.type) {
+                                  case 'NUMERIC':
+                                    return "Check your calculation and make sure to include units if required.";
+                                  case 'TRUE_FALSE':
+                                    return "Make sure you entered exactly 'True' or 'False'.";
+                                  case 'MULTIPLE_CHOICE':
+                                    return "Review the options carefully and select the best answer.";
+                                  case 'TEXT':
+                                    return "Check your spelling and make sure your answer is complete.";
+                                  default:
+                                    return "Review your answer and try again.";
+                                }
+                              })()}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4">
@@ -396,19 +605,38 @@
                   )}
                   
                   <div className="flex gap-2 ml-auto">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleSkipProblem(currentProblem.id)}
-                      disabled={updateProblemMutation.isPending}
-                    >
-                      Skip
-                    </Button>
-                    <Button
-                      onClick={() => handleCompleteProblem(currentProblem.id)}
-                      disabled={updateProblemMutation.isPending}
-                    >
-                      {isLastProblem ? 'Finish' : 'Next'}
-                    </Button>
+                    {!completedProblems.has(currentProblem.id) && (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleSkipProblem(currentProblem.id)}
+                          disabled={updateProblemMutation.isPending}
+                        >
+                          Skip
+                        </Button>
+                        <Button
+                          onClick={() => handleCompleteProblem(currentProblem.id)}
+                          disabled={updateProblemMutation.isPending || !userAnswers[currentProblem.id]?.trim()}
+                        >
+                          {isLastProblem ? 'Finish' : 'Next'}
+                        </Button>
+                      </>
+                    )}
+                    {completedProblems.has(currentProblem.id) && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="default" className="bg-green-100 text-green-800">
+                          ✓ Completed
+                        </Badge>
+                        {!isLastProblem && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setCurrentProblemIndex(currentProblemIndex + 1)}
+                          >
+                            Next Question
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

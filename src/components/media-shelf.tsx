@@ -10,54 +10,39 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { RouterOutputs } from "@goscribe/server";
 
-interface MediaFile {
-  id: string;
-  name: string;
-  type: 'pdf' | 'docx' | 'ppt' | 'txt' | 'audio' | 'image';
-  size: string;
-  uploadedAt: string;
-  url?: string;
-}
-
+type FileAsset = RouterOutputs['workspace']['get']['uploads'][number];  
 interface MediaShelfProps {
-  files: MediaFile[];
+  files: FileAsset[];
   onFileDelete: (fileId: string) => void;
 }
 
-// Mock data - in real app this would come from your database
-const mockFiles: MediaFile[] = [
-  { id: '1', name: 'React Tutorial.pdf', type: 'pdf', size: '2.4 MB', uploadedAt: '2024-01-15' },
-  { id: '2', name: 'Meeting Recording.mp3', type: 'audio', size: '15.2 MB', uploadedAt: '2024-01-14' },
-  { id: '3', name: 'Presentation Slides.pptx', type: 'ppt', size: '5.1 MB', uploadedAt: '2024-01-13' },
-  { id: '4', name: 'Notes.txt', type: 'txt', size: '24 KB', uploadedAt: '2024-01-12' },
-  { id: '5', name: 'Diagram.png', type: 'image', size: '1.8 MB', uploadedAt: '2024-01-11' },
-];
 
-const getFileIcon = (type: MediaFile['type']) => {
+const getFileIcon = (type: FileAsset['mimeType']) => {
   switch (type) {
-    case 'image':
+    case 'image/jpeg':
       return Image;
-    case 'audio':
+    case 'audio/mpeg':
       return Volume2;
     default:
       return FileText;
   }
 };
 
-const getFileTypeColor = (type: MediaFile['type']) => {
+const getFileTypeColor = (type: FileAsset['mimeType']) => {
   switch (type) {
-    case 'pdf':
+    case 'application/pdf':
       return 'bg-red-100 text-red-700 border-red-200';
-    case 'docx':
+    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
       return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'ppt':
+    case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
       return 'bg-orange-100 text-orange-700 border-orange-200';
-    case 'txt':
+    case 'text/plain':
       return 'bg-gray-100 text-gray-700 border-gray-200';
-    case 'audio':
+    case 'audio/mpeg':
       return 'bg-purple-100 text-purple-700 border-purple-200';
-    case 'image':
+    case 'image/jpeg':
       return 'bg-green-100 text-green-700 border-green-200';
     default:
       return 'bg-gray-100 text-gray-700 border-gray-200';
@@ -65,31 +50,12 @@ const getFileTypeColor = (type: MediaFile['type']) => {
 };
 
 export const MediaShelf = ({ files, onFileDelete }: MediaShelfProps) => {
-
-  const processFile = (file: File) => {
-    const newFile: MediaFile = {
-      id: Date.now().toString(),
-      name: file.name,
-      type: file.type.startsWith('audio/') ? 'audio' : 
-            file.type.startsWith('image/') ? 'image' :
-            file.name.endsWith('.pdf') ? 'pdf' :
-            file.name.endsWith('.docx') ? 'docx' :
-            file.name.endsWith('.pptx') ? 'ppt' : 'txt',
-      size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-      uploadedAt: new Date().toISOString().split('T')[0],
-    };
-    // This will be handled by the parent component
-    return newFile;
-  };
-
-
-
   return (
     <div className="space-y-4 bg-white p-4 rounded-lg">
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {files.map((file) => {
-          const FileIcon = getFileIcon(file.type);
+          const FileIcon = getFileIcon(file.mimeType);
           return (
             <Card key={file.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
@@ -97,14 +63,14 @@ export const MediaShelf = ({ files, onFileDelete }: MediaShelfProps) => {
                   <div className="flex items-start space-x-3 flex-1 min-w-0">
                     <div className={cn(
                       "flex items-center justify-center w-10 h-10 rounded-lg border",
-                      getFileTypeColor(file.type)
+                      getFileTypeColor(file.mimeType)
                     )}>
                       <FileIcon className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">{file.name}</h4>
                       <p className="text-xs text-muted-foreground">{file.size}</p>
-                      <p className="text-xs text-muted-foreground">{file.uploadedAt}</p>
+                      <p className="text-xs text-muted-foreground">{file.createdAt.toLocaleDateString()}</p>
                     </div>
                   </div>
                   

@@ -24,6 +24,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { Textarea } from "./ui/textarea";
+import { useParams } from "next/navigation";
 
 interface NavbarProps {
   onNewClick?: () => void;
@@ -81,7 +82,8 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
   );
 
   const createFile = trpc.workspace.create.useMutation();
-  const [description, setDescription] = useState("");
+  const createFolder = trpc.workspace.createFolder.useMutation();
+    const [description, setDescription] = useState("");
   const handleCreateFile = () => {
     if (fileName.trim()) {
       onCreateFile?.(fileName);
@@ -97,6 +99,10 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
   const handleCreateFolder = () => {
     if (folderName.trim()) {
       onCreateFolder?.(folderName);
+      createFolder.mutate({
+        name: folderName,
+        ...(folderId && { parentId: folderId as string }),
+      });
       setFolderName("");
       setIsNewFolderOpen(false);
     }
@@ -114,6 +120,9 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
     // In a real app, you'd navigate to the selected item
     console.log("Selected:", result);
   };
+
+  const { folderId } = useParams();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm shadow-soft">
       <div className="flex h-16 items-center justify-between px-4">
