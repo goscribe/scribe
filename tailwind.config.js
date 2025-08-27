@@ -5,10 +5,21 @@ module.exports = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",      // App Router
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",    // (if any Pages Router files)
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/**/*.{md,mdx}",                     // md/mdx content anywhere in src
+    "./src/**/*.{md,mdx,ts,tsx}",                     // md/mdx content anywhere in src
   ],
   theme: {
   	extend: {
+        backgroundImage: {
+          'hero-gradient': 'var(--hero-gradient)',
+          'hero-bg': 'var(--hero-bg)',
+          'feature-gradient': 'var(--feature-gradient)'
+        },
+        boxShadow: {
+          'glow': 'var(--shadow-glow)'
+        },
+        transitionTimingFunction: {
+          'smooth': 'var(--transition-smooth)'
+        },
   		keyframes: {
   			'accordion-down': {
   				from: {
@@ -54,7 +65,8 @@ module.exports = {
   			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
+  				foreground: 'hsl(var(--primary-foreground))',
+                glow: 'hsl(var(--primary-glow))'
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',

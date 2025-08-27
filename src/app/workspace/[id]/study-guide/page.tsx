@@ -9,6 +9,7 @@ import Header from "@editorjs/header";
 import List from "@editorjs/list";
 import "./page.css"
 import ImageTool from "@editorjs/image";
+import EJLaTeX from "editorjs-latex";
 
 interface StudyGuide {
     id: string;
@@ -50,7 +51,6 @@ export default function StudyGuidePanel() {
     ]);
 
     const [editingId, setEditingId] = useState<string | null>(null);
-
     const editorRef = useRef<Record<string, EditorJS>>({});
 
     const deleteGuide = async (id: string) => {
@@ -126,6 +126,10 @@ export default function StudyGuidePanel() {
                     byUrl: 'http://localhost:8008/fetchUrl', // Your endpoint that provides uploading by Url
                   }
                 }
+              },
+              Math: {
+                class: EJLaTeX,
+                shortcut: 'CMD+SHIFT+M'
               },
             },
             readOnly: editingId !== guide.id,
