@@ -2,16 +2,14 @@
 
 import {useEffect, useState} from "react";
 import "./page.css"
-import MeetingSummaryEditorJsRO from "@/app/workspace/[id]/meeting-summaries/[summaryId]/editing/EditorJs";
+import MeetingSummaryEditorJsE from "@/app/workspace/[id]/meeting-summaries/[summaryId]/editing/EditorJs";
 import {MeetingSummaryContent} from "@/app/workspace/[id]/meeting-summaries/[summaryId]/editing/EditorJs";
-import {CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {ArrowLeftIcon} from "lucide-react";
 import {useParams, useRouter} from "next/navigation";
 import {
     MeetingSummary,
-    SummaryActionItems,
-    SummaryKeyPoints,
     SummaryMetadata
 } from "@/app/workspace/[id]/meeting-summaries/page";
 
@@ -89,35 +87,38 @@ export default function MeetingSummaryPage() {
     }, []);
     return(
         <>
-        <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                    <Button size="sm" variant="outline" onClick={handleExitOnCancel}><ArrowLeftIcon className="h-3 w-3" /></Button>
-                </CardTitle>
+            <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">
+                        <Button size="sm" variant="outline" onClick={handleExitOnCancel}><ArrowLeftIcon className="h-3 w-3" /></Button>
+                    </CardTitle>
+                    <div className="flex items-center space-x-2">
+                </div>
+                    <div className="flex items-center space-x-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleExitOnSave}
+                        >
+                            Save
+                        </Button>
+                    </div>
+                </div>
+            </CardHeader>
+            <div className="flex items-center justify-between pb-3">
                 {
                     (curSum !== undefined) ? (
-                        <>
-                            <SummaryMetadata summary={curSum}></SummaryMetadata>
-                            <CardContent className="space-y-4">
-                                <SummaryKeyPoints summary={curSum}/>
-                                <SummaryActionItems summary={curSum}/>
-                            </CardContent>
-                        </>
+                        <Card className="space-y-4 min-w-full">
+                            <>
+                                <CardContent className="space-y-4 min-w-full">
+                                    <SummaryMetadata summary={curSum}></SummaryMetadata>
+                                </CardContent>
+                            </>
+                        </Card>
                     ) : <></>
                 }
-                <div className="flex items-center space-x-2">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleExitOnSave()}
-                    >
-                        Save
-                    </Button>
-                </div>
-
             </div>
-        </CardHeader>
-        <MeetingSummaryEditorJsRO dsummary={summary} isOnSave={onSave} setOnSave={setOnSave}/>
+        <MeetingSummaryEditorJsE dsummary={summary} isOnSave={onSave} setOnSave={setOnSave}/>
         </>
     );
 }

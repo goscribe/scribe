@@ -4,7 +4,7 @@ import {useEffect, useState} from "react";
 import "./page.css"
 import MeetingSummaryEditorJsRO from "@/app/workspace/[id]/meeting-summaries/[summaryId]/readonly/EditorJs";
 import {MeetingSummaryContent} from "@/app/workspace/[id]/meeting-summaries/[summaryId]/readonly/EditorJs";
-import {CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {ArrowLeftIcon} from "lucide-react";
 import {useParams, useRouter} from "next/navigation";
@@ -76,27 +76,29 @@ export default function MeetingSummaryPage() {
         <>
         <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                    <Button size="sm" variant="outline" onClick={() => {router.push(`/workspace/${id}/meeting-summaries`);}}><ArrowLeftIcon className="h-3 w-3" /></Button>
-                </CardTitle>
-                {
-                    (curSum !== undefined) ? (
-                        <>
-                            <SummaryMetadata summary={curSum}></SummaryMetadata>
-                            <CardContent className="space-y-4">
-                                <SummaryKeyPoints summary={curSum}/>
-                                <SummaryActionItems summary={curSum}/>
-                            </CardContent>
-                        </>
-                    ) : <></>
-                }
-                <div className="flex items-center space-x-2">
+            <CardTitle className="text-base">
+                <Button size="sm" variant="outline" onClick={() => {router.push(`/workspace/${id}/meeting-summaries`);}}><ArrowLeftIcon className="h-3 w-3" /></Button>
+            </CardTitle>
+            <div className="flex items-center space-x-2">
                 <span className="text-xs text-muted-foreground">
                   Modified {summary.lastModified}
                 </span>
-                </div>
+            </div>
             </div>
         </CardHeader>
+            <div className="flex items-center justify-between pb-3">
+                {
+                    (curSum !== undefined) ? (
+                        <Card className="space-y-4 min-w-full">
+                            <>
+                                <CardContent className="space-y-4 min-w-full">
+                                    <SummaryMetadata summary={curSum}></SummaryMetadata>
+                                </CardContent>
+                            </>
+                        </Card>
+                    ) : <></>
+                }
+            </div>
         <MeetingSummaryEditorJsRO dsummary={summary} />
         </>
     );

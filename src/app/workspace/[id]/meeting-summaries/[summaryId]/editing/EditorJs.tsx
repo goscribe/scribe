@@ -22,7 +22,7 @@ interface MeetingSummaryEditorJsEProp {
     setOnSave: (onSave: boolean) => void;
 }
 
-export default function MeetingSummaryEditorJsRO({ dsummary, isOnSave, setOnSave}: MeetingSummaryEditorJsEProp) {
+export default function MeetingSummaryEditorJsE({ dsummary, isOnSave, setOnSave}: MeetingSummaryEditorJsEProp) {
     const editorRef = useRef<EditorJS | null>(null);
 
     const handleSave = async () => {
