@@ -4,15 +4,44 @@ import {useEffect, useState} from "react";
 import "./page.css"
 import MeetingSummaryEditorJsRO from "@/app/workspace/[id]/meeting-summaries/[summaryId]/editing/EditorJs";
 import {MeetingSummaryContent} from "@/app/workspace/[id]/meeting-summaries/[summaryId]/editing/EditorJs";
-import {CardHeader, CardTitle} from "@/components/ui/card";
+import {CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {ArrowLeftIcon} from "lucide-react";
 import {useParams, useRouter} from "next/navigation";
+import {
+    MeetingSummary,
+    SummaryActionItems,
+    SummaryKeyPoints,
+    SummaryMetadata
+} from "@/app/workspace/[id]/meeting-summaries/page";
 
 export default function MeetingSummaryPage() {
-    const { id } = useParams();
+    const { id, summaryId } = useParams();
     const router = useRouter();
     const [onSave, setOnSave] = useState(false);
+    const [summaries, setSummaries] = useState<MeetingSummary[]>([
+        {
+            id: '1',
+            title: 'Team Planning Meeting',
+            date: '2024-01-15',
+            duration: '45 min',
+            participants: ['Alice Johnson', 'Bob Smith', 'Carol Davis'],
+            keyPoints: ['Project timeline discussed', 'Resource allocation reviewed'],
+            actionItems: ['Update project roadmap', 'Schedule follow-up'],
+            status: 'Final'
+        },
+        {
+            id: '2',
+            title: 'Client Requirements Review',
+            date: '2024-01-12',
+            duration: '60 min',
+            participants: ['John Doe', 'Jane Smith'],
+            keyPoints: ['Requirements clarification', 'Technical constraints'],
+            actionItems: ['Draft technical specification'],
+            status: 'Draft'
+        }
+    ]);
+    const [curSum, setCurSum] = useState<MeetingSummary | undefined>(summaries.at(0));
     const [summary, setSummary] = useState<MeetingSummaryContent>({
         id: "1",
         title: "Main Study Guide",
@@ -56,6 +85,7 @@ export default function MeetingSummaryPage() {
     }
 
     useEffect(() => {
+        setCurSum(summaries.find(summary=> summary.id === summaryId));
     }, []);
     return(
         <>
@@ -64,7 +94,17 @@ export default function MeetingSummaryPage() {
                 <CardTitle className="text-base">
                     <Button size="sm" variant="outline" onClick={handleExitOnCancel}><ArrowLeftIcon className="h-3 w-3" /></Button>
                 </CardTitle>
-                <CardTitle className="text-base">{summary.title}</CardTitle>
+                {
+                    (curSum !== undefined) ? (
+                        <>
+                            <SummaryMetadata summary={curSum}></SummaryMetadata>
+                            <CardContent className="space-y-4">
+                                <SummaryKeyPoints summary={curSum}/>
+                                <SummaryActionItems summary={curSum}/>
+                            </CardContent>
+                        </>
+                    ) : <></>
+                }
                 <div className="flex items-center space-x-2">
                     <Button
                         size="sm"
