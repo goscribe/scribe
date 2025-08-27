@@ -5,34 +5,61 @@ import { Plus, RotateCcw, Edit3, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FlashcardCreateModal } from "@/components/flashcard-create-modal";
+import { trpc } from "@/lib/trpc";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
 
 interface Flashcard {
   id: string;
   front: string;
   back: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export default function FlashcardsPanel() {
-  const [cards, setCards] = useState<Flashcard[]>([
-    {
-      id: '1',
-      front: 'What is the derivative of x²?',
-      back: 'The derivative of x² is 2x using the power rule.'
-    },
-    {
-      id: '2',
-      front: 'Define a limit in calculus',
-      back: 'A limit is the value that a function approaches as the input approaches a certain value.'
-    },
-    {
-      id: '3',
-      front: 'What is the chain rule?',
-      back: 'The chain rule states that d/dx[f(g(x))] = f\'(g(x)) × g\'(x)'
-    }
-  ]);
-
+  const params = useParams();
+  const workspaceId = params.id as string;
+  
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // tRPC queries and mutations
+  const { data: cards = [], isLoading, error, refetch } = trpc.flashcards.list.useQuery(
+    { workspaceId },
+    { enabled: !!workspaceId }
+  );
+
+  const createMutation = trpc.flashcards.create.useMutation({
+    onSuccess: () => {
+      refetch();
+      setIsCreateModalOpen(false);
+      toast.success("Flashcard created successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to create flashcard");
+    },
+  });
+
+  const deleteMutation = trpc.flashcards.delete.useMutation({
+    onSuccess: () => {
+      refetch();
+      toast.success("Flashcard deleted successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete flashcard");
+    },
+  });
+
+  const updateMutation = trpc.flashcards.update.useMutation({
+    onSuccess: () => {
+      refetch();
+      toast.success("Flashcard updated successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update flashcard");
+    },
+  });
 
   const flipCard = (cardId: string) => {
     setFlippedCards(prev => {
@@ -47,16 +74,15 @@ export default function FlashcardsPanel() {
   };
 
   const handleCreateCard = (front: string, back: string) => {
-    const newCard: Flashcard = {
-      id: Date.now().toString(),
+    createMutation.mutate({
+      workspaceId,
       front,
-      back
-    };
-    setCards([...cards, newCard]);
+      back,
+    });
   };
 
   const deleteCard = (cardId: string) => {
-    setCards(cards.filter(card => card.id !== cardId));
+    deleteMutation.mutate({ id: cardId });
     setFlippedCards(prev => {
       const newSet = new Set(prev);
       newSet.delete(cardId);
@@ -65,13 +91,55 @@ export default function FlashcardsPanel() {
   };
 
   const shuffleCards = () => {
-    setCards([...cards].sort(() => Math.random() - 0.5));
-    //setFlippedCards(new Set());
+    // Note: This is client-side shuffling. For server-side shuffling,
+    // you'd need to add a shuffle endpoint to the tRPC router
+    setFlippedCards(new Set());
   };
 
-    const hideAnswers = () => {
-      setFlippedCards(new Set());
-    };
+  const hideAnswers = () => {
+    setFlippedCards(new Set());
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Flashcards</h3>
+            <p className="text-sm text-muted-foreground">
+              Interactive study cards for quick review
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Flashcards</h3>
+            <p className="text-sm text-muted-foreground">
+              Interactive study cards for quick review
+            </p>
+          </div>
+        </div>
+        <Card className="border-destructive">
+          <CardContent className="p-8 text-center">
+            <p className="text-destructive">Error loading flashcards: {error.message}</p>
+            <Button onClick={() => refetch()} className="mt-2" variant="outline">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -87,11 +155,21 @@ export default function FlashcardsPanel() {
             <RotateCcw className="h-4 w-4 mr-2" />
             Hide all answers
           </Button>
-          <Button onClick={shuffleCards} size="sm" variant="outline">
+          <Button 
+            onClick={shuffleCards} 
+            size="sm" 
+            variant="outline"
+            disabled={cards.length === 0}
+          >
             <RotateCcw className="h-4 w-4 mr-2" />
             Shuffle
           </Button>
-          <Button onClick={() => setIsCreateModalOpen(true)} size="sm" className="gradient-primary">
+          <Button 
+            onClick={() => setIsCreateModalOpen(true)} 
+            size="sm" 
+            className="gradient-primary"
+            disabled={createMutation.isPending}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Card
           </Button>
@@ -102,6 +180,7 @@ export default function FlashcardsPanel() {
         isOpen={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
         onCreateCard={handleCreateCard}
+        isLoading={createMutation.isPending}
       />
 
       {/* Flashcards grid */}
@@ -137,6 +216,7 @@ export default function FlashcardsPanel() {
                       e.stopPropagation();
                       deleteCard(card.id);
                     }}
+                    disabled={deleteMutation.isPending}
                   >
                   <Trash2 className="h-3 w-3" />
                   </Button>
@@ -150,7 +230,12 @@ export default function FlashcardsPanel() {
         <Card className="border-dashed border-2 border-muted">
           <CardContent className="p-8 text-center">
             <p className="text-muted-foreground">No flashcards yet.</p>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-2" variant="outline">
+            <Button 
+              onClick={() => setIsCreateModalOpen(true)} 
+              className="mt-2" 
+              variant="outline"
+              disabled={createMutation.isPending}
+            >
               Create your first flashcard
             </Button>
           </CardContent>

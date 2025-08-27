@@ -1,12 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { File, Upload, Trash2, Download, MoreVertical, Image, FileText, Volume2 } from "lucide-react";
+import { File, Trash2, Download, MoreVertical, Image, FileText, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +18,11 @@ interface MediaFile {
   size: string;
   uploadedAt: string;
   url?: string;
+}
+
+interface MediaShelfProps {
+  files: MediaFile[];
+  onFileDelete: (fileId: string) => void;
 }
 
 // Mock data - in real app this would come from your database
@@ -63,15 +64,7 @@ const getFileTypeColor = (type: MediaFile['type']) => {
   }
 };
 
-export const MediaShelf = () => {
-  const [files, setFiles] = useState<MediaFile[]>(mockFiles);
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileDelete = (fileId: string) => {
-    setFiles(files.filter(f => f.id !== fileId));
-  };
+export const MediaShelf = ({ files, onFileDelete }: MediaShelfProps) => {
 
   const processFile = (file: File) => {
     const newFile: MediaFile = {
@@ -85,101 +78,14 @@ export const MediaShelf = () => {
       size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
       uploadedAt: new Date().toISOString().split('T')[0],
     };
-    setFiles([newFile, ...files]);
+    // This will be handled by the parent component
+    return newFile;
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      processFile(file);
-      setIsUploadOpen(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0) {
-      droppedFiles.forEach(processFile);
-      setIsUploadOpen(false);
-    }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
 
   return (
     <div className="space-y-4 bg-white p-4 rounded-lg">
-      <div className="flex items-center justify-between">
-        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-          <DialogTrigger asChild>
-            <Button className="gradient-primary">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload File
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Upload New File</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              {/* Drag and Drop Area */}
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={handleUploadClick}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ${
-                  isDragOver 
-                    ? 'border-primary bg-primary/5 scale-105' 
-                    : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/20'
-                }`}
-              >
-                <Upload className={`mx-auto h-12 w-12 mb-4 transition-colors ${
-                  isDragOver ? 'text-primary' : 'text-muted-foreground'
-                }`} />
-                <div className="space-y-2">
-                  <p className="text-lg font-medium">
-                    {isDragOver ? 'Drop files here' : 'Drag and drop files here'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    or click to browse files
-                  </p>
-                </div>
-              </div>
-              
-              {/* Hidden File Input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.docx,.pptx,.txt,.mp3,.wav,.jpg,.jpeg,.png,.gif"
-                onChange={handleFileUpload}
-                className="hidden"
-                multiple
-              />
-              
-              <p className="text-xs text-muted-foreground text-center">
-                Supported formats: PDF, DOCX, PPT, TXT, audio files (MP3, WAV), and images
-              </p>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {files.map((file) => {
@@ -215,7 +121,7 @@ export const MediaShelf = () => {
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-destructive"
-                        onClick={() => handleFileDelete(file.id)}
+                        onClick={() => onFileDelete(file.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete

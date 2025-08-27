@@ -11,14 +11,20 @@ interface FlashcardCreateModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateCard: (front: string, back: string) => void;
+  isLoading?: boolean;
 }
 
-export const FlashcardCreateModal = ({ isOpen, onOpenChange, onCreateCard }: FlashcardCreateModalProps) => {
+export const FlashcardCreateModal = ({ 
+  isOpen, 
+  onOpenChange, 
+  onCreateCard, 
+  isLoading = false 
+}: FlashcardCreateModalProps) => {
   const [front, setFront] = useState('');
   const [back, setBack] = useState('');
 
   const handleSubmit = () => {
-    if (front.trim() && back.trim()) {
+    if (front.trim() && back.trim() && !isLoading) {
       onCreateCard(front.trim(), back.trim());
       setFront('');
       setBack('');
@@ -27,9 +33,11 @@ export const FlashcardCreateModal = ({ isOpen, onOpenChange, onCreateCard }: Fla
   };
 
   const handleCancel = () => {
-    setFront('');
-    setBack('');
-    onOpenChange(false);
+    if (!isLoading) {
+      setFront('');
+      setBack('');
+      onOpenChange(false);
+    }
   };
 
   return (
@@ -47,6 +55,7 @@ export const FlashcardCreateModal = ({ isOpen, onOpenChange, onCreateCard }: Fla
               placeholder="Enter the question or prompt"
               value={front}
               onChange={(e) => setFront(e.target.value)}
+              disabled={isLoading}
             />
           </div>
           
@@ -58,16 +67,27 @@ export const FlashcardCreateModal = ({ isOpen, onOpenChange, onCreateCard }: Fla
               value={back}
               onChange={(e) => setBack(e.target.value)}
               rows={3}
+              disabled={isLoading}
             />
           </div>
         </div>
         
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={handleCancel}>
+          <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!front.trim() || !back.trim()}>
-            Create Card
+          <Button 
+            onClick={handleSubmit} 
+            disabled={!front.trim() || !back.trim() || isLoading}
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Creating...
+              </>
+            ) : (
+              'Create Card'
+            )}
           </Button>
         </div>
       </DialogContent>
