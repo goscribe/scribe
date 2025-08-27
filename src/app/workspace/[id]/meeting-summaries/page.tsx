@@ -5,6 +5,7 @@ import { Plus, Eye, Edit3, Calendar, Users, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {useParams, useRouter} from "next/navigation";
 
 interface MeetingSummary {
   id: string;
@@ -18,6 +19,8 @@ interface MeetingSummary {
 }
 
 export default function SummariesPanel() {
+  const router = useRouter();
+  const id = useParams();
   const [summaries, setSummaries] = useState<MeetingSummary[]>([
     {
       id: '1',
@@ -57,6 +60,12 @@ export default function SummariesPanel() {
 
   const openSummary = (summaryId: string) => {
     console.log('Opening summary:', summaryId);
+    router.push(`/workspace/${id}/meeting-summaries/${summaryId}/readonly`);
+  };
+
+  const editSummary = (summaryId: string) => {
+    console.log('Opening summary:', summaryId);
+    router.push(`/workspace/${id}/meeting-summaries/${summaryId}/editing`);
   };
 
   const getStatusColor = (status: string) => {
@@ -158,7 +167,7 @@ export default function SummariesPanel() {
                   View
                 </Button>
                 <Button 
-                  onClick={() => openSummary(summary.id)}
+                  onClick={() => editSummary(summary.id)}
                   size="sm" 
                   variant="outline"
                 >
