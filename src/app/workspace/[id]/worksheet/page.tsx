@@ -5,7 +5,8 @@ import { Plus, Eye, Edit3, Calendar, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { WorksheetEditModal } from "@/components/worksheet-edit-modal";
+
+
 import { trpc } from "@/lib/trpc";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -44,17 +45,6 @@ export default function WorksheetPanel() {
     },
     onError: (error) => {
       toast.error(error.message || "Failed to delete worksheet");
-    },
-  });
-
-  const updateMutation = trpc.worksheets.update.useMutation({
-    onSuccess: () => {
-      refetch();
-      setIsEditModalOpen(false);
-      toast.success("Worksheet updated successfully!");
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update worksheet");
     },
   });
 
@@ -106,29 +96,8 @@ export default function WorksheetPanel() {
     router.push(`/workspace/${workspaceId}/worksheet/${worksheetId}`);
   };
 
-  const openEditModal = (worksheet: Worksheet) => {
-    setSelectedWorksheet(worksheet);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateWorksheet = (id: string, data: {
-    title: string;
-    description: string;
-    difficulty: 'EASY' | 'MEDIUM' | 'HARD';
-    estimatedTime: string;
-    problems: Array<{
-      id?: string;
-      question: string;
-      answer: string;
-      type: 'MULTIPLE_CHOICE' | 'TEXT' | 'NUMERIC' | 'TRUE_FALSE' | 'MATCHING' | 'FILL_IN_THE_BLANK';
-      options?: string[];
-      order: number;
-    }>;
-  }) => {
-    updateMutation.mutate({
-      id,
-      ...data,
-    });
+  const openEditPage = (worksheetId: string) => {
+    router.push(`/workspace/${workspaceId}/worksheet/${worksheetId}/edit`);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -273,14 +242,7 @@ export default function WorksheetPanel() {
                     {completedProblems > 0 ? 'Continue' : 'Start'}
                   </Button>
                   <Button 
-                    onClick={() => openEditModal({
-                      id: worksheet.id,
-                      title: worksheet.title,
-                      description: worksheet.description,
-                      difficulty: worksheet.difficulty!,
-                      estimatedTime: worksheet.estimatedTime,
-                      questions: worksheet.questions,
-                    })}
+                    onClick={() => openEditPage(worksheet.id)}
                     size="sm" 
                     variant="outline"
                   >
@@ -294,13 +256,6 @@ export default function WorksheetPanel() {
         })}
       </div>
 
-      <WorksheetEditModal
-        isOpen={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        onUpdateWorksheet={handleUpdateWorksheet}
-        worksheet={selectedWorksheet}
-        isLoading={updateMutation.isPending}
-      />
 
       {worksheets.length === 0 && (
         <Card className="border-dashed border-2 border-muted">

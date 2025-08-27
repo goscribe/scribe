@@ -5,17 +5,13 @@ import { Plus, RotateCcw, Edit3, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FlashcardCreateModal } from "@/components/flashcard-create-modal";
+import { FlashcardEditModal } from "@/components/flashcard-edit-modal";
 import { trpc } from "@/lib/trpc";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import { RouterOutputs } from "@goscribe/server";
 
-interface Flashcard {
-  id: string;
-  front: string;
-  back: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+type Flashcard = RouterOutputs['flashcards']['listCards'][number];
 
 export default function FlashcardsPanel() {
   const params = useParams();
@@ -23,14 +19,16 @@ export default function FlashcardsPanel() {
   
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
 
   // tRPC queries and mutations
-  const { data: cards = [], isLoading, error, refetch } = trpc.flashcards.list.useQuery(
+  const { data: cards = [], isLoading, error, refetch } = trpc.flashcards.listCards.useQuery(
     { workspaceId },
     { enabled: !!workspaceId }
   );
 
-  const createMutation = trpc.flashcards.create.useMutation({
+  const createMutation = trpc.flashcards.createCard.useMutation({
     onSuccess: () => {
       refetch();
       setIsCreateModalOpen(false);
@@ -41,7 +39,7 @@ export default function FlashcardsPanel() {
     },
   });
 
-  const deleteMutation = trpc.flashcards.delete.useMutation({
+  const deleteMutation = trpc.flashcards.deleteCard.useMutation({
     onSuccess: () => {
       refetch();
       toast.success("Flashcard deleted successfully!");
@@ -51,7 +49,7 @@ export default function FlashcardsPanel() {
     },
   });
 
-  const updateMutation = trpc.flashcards.update.useMutation({
+  const updateMutation = trpc.flashcards.updateCard.useMutation({
     onSuccess: () => {
       refetch();
       toast.success("Flashcard updated successfully!");
@@ -81,8 +79,21 @@ export default function FlashcardsPanel() {
     });
   };
 
+  const handleUpdateCard = (id: string, front: string, back: string) => {
+    updateMutation.mutate({
+      cardId: id,
+      front,
+      back,
+    });
+  };
+
+  const openEditModal = (card: Flashcard) => {
+    setEditingCard(card);
+    setIsEditModalOpen(true);
+  };
+
   const deleteCard = (cardId: string) => {
-    deleteMutation.mutate({ id: cardId });
+    deleteMutation.mutate({ cardId: cardId });
     setFlippedCards(prev => {
       const newSet = new Set(prev);
       newSet.delete(cardId);
@@ -183,6 +194,14 @@ export default function FlashcardsPanel() {
         isLoading={createMutation.isPending}
       />
 
+      <FlashcardEditModal
+        isOpen={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onUpdateCard={handleUpdateCard}
+        flashcard={editingCard}
+        isLoading={updateMutation.isPending}
+      />
+
       {/* Flashcards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {cards.map((card) => {
@@ -207,20 +226,32 @@ export default function FlashcardsPanel() {
                   </div>
                 </CardContent>
               </div>
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 w-8 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteCard(card.id);
-                    }}
-                    disabled={deleteMutation.isPending}
-                  >
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEditModal(card);
+                  }}
+                  disabled={updateMutation.isPending}
+                >
+                  <Edit3 className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteCard(card.id);
+                  }}
+                  disabled={deleteMutation.isPending}
+                >
                   <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
+                </Button>
+              </div>
             </Card>
           );
         })}

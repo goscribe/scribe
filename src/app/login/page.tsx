@@ -11,7 +11,6 @@ import { Brain, BookOpen, Headphones, Mail, Lock, ArrowRight } from "lucide-reac
 import Link from "next/link";
 import { client } from "@/lib/trpc-client";
 import { useSession } from "@/lib/useSession";
-import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
