@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
                        request.cookies.get('__Host-authjs.session-token')
 
   // If no session cookie and trying to access protected routes, redirect to login
-  if (!sessionCookie && request.nextUrl.pathname.startsWith('/workspace')) {
+  if (!sessionCookie && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -17,7 +17,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/workspace/:path*",
+    "/dashboard/:path*",
   ],
 };
 

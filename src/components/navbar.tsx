@@ -24,7 +24,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { Textarea } from "./ui/textarea";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface NavbarProps {
   onNewClick?: () => void;
@@ -34,7 +35,7 @@ interface NavbarProps {
 
 export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps) => {
   const { data: session, isLoading, error } = useSession();
-  
+  const router = useRouter();
   // Determine status based on @auth session
   const status = isLoading ? "loading" : session?.user ? "authenticated" : "unauthenticated";
   
@@ -55,8 +56,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
     if (session?.user?.email) return session.user.email.split('@')[0];
     return "User";
   };
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [isShareOpen, setIsShareOpen] = useState(false);
+
   const [isNewFileOpen, setIsNewFileOpen] = useState(false);
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,32 +64,24 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
   const [folderName, setFolderName] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
 
-  // Mock search results
-  const mockSearchResults = [
-    { id: 1, name: "React Fundamentals", type: "file", icon: FileText },
-    { id: 2, name: "JavaScript Study Guide", type: "study-guide", icon: Brain },
-    { id: 3, name: "API Documentation", type: "file", icon: FileText },
-    { id: 4, name: "Learning Podcasts", type: "podcast", icon: Headphones },
-    { id: 5, name: "Project Notes", type: "folder", icon: FolderPlus },
-    { id: 6, name: "CSS Flexbox Worksheet", type: "worksheet", icon: BookOpen },
-  ];
-
-  // const signOut = trpc.auth.signOut.useMutation();
-  // const signOut = trpc.auth.logout.useMutation();
-
-  const filteredResults = mockSearchResults.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { data: searchResults, isLoading: isSearching, error: searchError } = trpc.workspace.search.useQuery({
+    query: searchQuery,
+  }, {
+    enabled: !!searchQuery,
+  });
+  
 
   const createFile = trpc.workspace.create.useMutation();
   const createFolder = trpc.workspace.createFolder.useMutation();
     const [description, setDescription] = useState("");
+    
   const handleCreateFile = () => {
     if (fileName.trim()) {
       onCreateFile?.(fileName);
       createFile.mutate({
         name: fileName,
         description: description || undefined,
+        ...(folderId && { parentId: folderId as string }),
       });
       setFileName("");
       setIsNewFileOpen(false);
@@ -108,17 +100,15 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
     }
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
-    setShowSearchResults(value.length > 0);
-  };
-
-  const handleSearchResultClick = (result: { id: number; name: string; type: string; icon: React.ElementType }) => {
-    setSearchQuery("");
-    setShowSearchResults(false);
-    // In a real app, you'd navigate to the selected item
-    console.log("Selected:", result);
+    
+    if (value.length > 0) {
+      setShowSearchResults(true);
+    } else {
+      setShowSearchResults(false);
+    }
   };
 
   const { folderId } = useParams();
@@ -127,7 +117,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
     <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm shadow-soft">
       <div className="flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2" onClick={() => router.push("/dashboard")}>
           <img src="/logo.png" alt="Scribe Logo" className="h-6 w-6" />
           <span className="text-xl font-semibold">
             scribe
@@ -141,7 +131,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
         </div>
 
         {/* Search Bar */}
-        <div className="flex-1 max-w-md mx-8">
+        {status === "authenticated" && <div className="flex-1 max-w-md mx-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
             <Input
@@ -152,24 +142,41 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
               onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
               className="pl-10 bg-muted/50 border border-border focus:bg-card transition-colors"
             />
+            {/* Loading State */}
+            {isSearching && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                <div className="p-2">
+                  <p className="text-xs text-muted-foreground mb-2 px-2">Searching...</p>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center space-x-3 p-2">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <div className="flex-1 space-y-1">
+                          <Skeleton className="h-3 w-3/4" />
+                          <Skeleton className="h-2 w-1/2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
             
-            {/* Search Results Dropdown */}
-            {showSearchResults && filteredResults.length > 0 && (
+            {/* Search Results Dropdown */} 
+            {showSearchResults && !isSearching && searchResults && searchResults.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                 <div className="p-2">
                   <p className="text-xs text-muted-foreground mb-2 px-2">Search Results</p>
-                  {filteredResults.slice(0, 6).map((result) => {
-                    const IconComponent = result.icon;
+                  {searchResults.slice(0, 6).map((result) => {
                     return (
                       <button
                         key={result.id}
-                        onClick={() => handleSearchResultClick(result)}
+                        onClick={() => router.push(`/workspace/${result.id}`)}
                         className="w-full flex items-center space-x-3 p-2 rounded-md hover:bg-muted/50 transition-colors text-left"
                       >
-                        <IconComponent className="h-4 w-4 text-muted-foreground" />
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{result.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{result.type.replace('-', ' ')}</p>
+                          <p className="text-sm font-medium">{result.title}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{result.description || "No description"}</p>
                         </div>
                       </button>
                     );
@@ -179,7 +186,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
             )}
             
             {/* No Results Message */}
-            {showSearchResults && searchQuery.length > 0 && filteredResults.length === 0 && (
+            {showSearchResults && !isSearching && searchQuery.length > 0 && searchResults && searchResults.length === 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50">
                 <div className="p-4 text-center">
                   <p className="text-sm text-muted-foreground">No results found for &quot;{searchQuery}&quot;</p>
@@ -187,7 +194,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
               </div>
             )}
           </div>
-        </div>
+        </div>}
 
         {/* Right Actions */}
         <div className="flex items-center space-x-3">

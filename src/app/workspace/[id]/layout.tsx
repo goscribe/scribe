@@ -1,8 +1,12 @@
 "use client";
 
-import { BookOpen, Brain, FileText, MessageSquare, Podcast, ChevronDown, Search, Plus, FolderOpen, Upload, PanelLeftClose, PanelLeftOpen, InfoIcon } from "lucide-react";
+import { BookOpen, Brain, FileText, MessageSquare, Podcast, ChevronDown, Search, Plus, FolderOpen, Upload, PanelLeftClose, PanelLeftOpen, InfoIcon, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useRef } from "react";
+import { AnalysisLoadingOverlay } from "@/components/analysis-loading-overlay";
+import { AnalysisNotification } from "@/components/analysis-notification";
+import { PusherTestPanel } from "@/components/pusher-test-panel";
+import { usePusherAnalysis } from "@/hooks/use-pusher-analysis";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,14 +15,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { MediaShelf } from "@/components/media-shelf";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export type WorkspaceTab = 'def' | 'study-guide' | 'flashcards' | 'worksheet' | 'summaries' | 'podcasts';
+export type WorkspaceTab = 'def' | 'study-guide' | 'flashcards' | 'worksheet' | 'summaries' | 'podcasts' | 'chat';
 
 interface WorkspaceSidebarProps {
   activeTab: WorkspaceTab;
@@ -80,16 +85,16 @@ const tabs = [
     description: 'Practice exercises and problems'
   },
   {
-    id: 'meeting-summaries' as WorkspaceTab,
-    label: 'Meeting Summaries',
-    icon: MessageSquare,
-    description: 'Structured meeting notes'
-  },
-  {
     id: 'podcasts' as WorkspaceTab,
     label: 'Podcasts',
     icon: Podcast,
     description: 'Audio content and transcripts'
+  },
+  {
+    id: 'chat' as WorkspaceTab,
+    label: 'Chat',
+    icon: MessageCircle,
+    description: 'Real-time messaging and collaboration'
   }
 ];
 
@@ -97,9 +102,21 @@ export const WorkspaceSidebar = ({ activeTab, onTabChange, isCollapsed }: Worksp
   const [selectedNote, setSelectedNote] = useState(mockNotes[0]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredNotes = mockNotes.filter(note =>
-    note.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const router = useRouter();
+  const { id } = useParams();
+
+  const { data: filteredWorkspaces, isLoading: filteredWorkspacesLoading, error: filteredWorkspacesError, refetch: refetchFilteredWorkspaces } = trpc.workspace.search.useQuery({
+    query: searchTerm,
+  }, {
+    enabled: !!searchTerm,
+  });
+
+  const { data: workspace, isLoading: workspaceLoading, error: workspaceError, refetch: refetchWorkspace } = trpc.workspace.get.useQuery({
+    id: id as string,
+  }, {
+    enabled: !!id,
+  });
+
 
   return (
     <div className={cn(
@@ -113,8 +130,11 @@ export const WorkspaceSidebar = ({ activeTab, onTabChange, isCollapsed }: Worksp
               <DropdownMenuTrigger asChild>
                 <button className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex-1 text-left">
-                    <div className="font-medium text-sm truncate">{selectedNote.title}</div>
-                    <div className="text-xs text-muted-foreground capitalize">{selectedNote.type.replace('-', ' ')}</div>
+                    {workspaceLoading && (
+                      <Skeleton className="w-full h-4" />
+                    )}
+                    <div className="font-medium text-sm truncate">{workspace?.title}</div>
+                    <div className="text-xs text-muted-foreground capitalize">{workspace?.description}</div>
                   </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </button>
@@ -132,14 +152,35 @@ export const WorkspaceSidebar = ({ activeTab, onTabChange, isCollapsed }: Worksp
               </div>
             </div>
             <div className="max-h-60 overflow-y-auto">
-              {filteredNotes.map((note) => (
+              {filteredWorkspacesLoading && (
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col items-start justify-center p-4 gap-2">
+                    <Skeleton className="w-full h-4" />
+                    <Skeleton className="w-full h-2" />
+                  </div>
+                  <div className="flex flex-col items-start justify-center p-4 gap-2">
+                    <Skeleton className="w-full h-4" />
+                    <Skeleton className="w-full h-2" />
+                  </div>
+                  <div className="flex flex-col items-start justify-center p-4 gap-2">
+                    <Skeleton className="w-full h-4" />
+                    <Skeleton className="w-full h-2" />
+                  </div>
+                </div>
+              )}
+              {filteredWorkspaces?.length === 0 && !filteredWorkspacesLoading && (
+                <div className="flex flex-col items-start justify-center p-4 gap-2">
+                  <p className="text-sm text-muted-foreground">No workspaces found</p>
+                </div>
+              )}
+              {filteredWorkspaces?.map((workspace) => (
                 <DropdownMenuItem
-                  key={note.id}
-                  onClick={() => setSelectedNote(note)}
+                  key={workspace.id}
+                  onClick={() => router.push(`/workspace/${id}/${workspace.id}`)}
                   className="flex flex-col items-start p-3 cursor-pointer"
                 >
-                  <div className="font-medium text-sm">{note.title}</div>
-                  <div className="text-xs text-muted-foreground capitalize">{note.type.replace('-', ' ')}</div>
+                  <div className="font-medium text-sm">{workspace.title}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{workspace.description}</div>
                 </DropdownMenuItem>
               ))}
             </div>
@@ -206,7 +247,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Pusher analysis hook
+  const { loadingState, showOverlay, resetState, hideOverlay } = usePusherAnalysis(id as string);
 
   const { data: workspace, isLoading: workspaceLoading, error: workspaceError, refetch: refetchWorkspace } = trpc.workspace.get.useQuery({
     id: id as string,
@@ -214,32 +259,67 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     enabled: !!id,
   });
 
+
+
   const files = workspace?.uploads || []; // TODO: fix this
 
-  const uploadFileMutation = trpc.workspace.uploadFiles.useMutation();
+  const uploadAndAnalyzeMutation = trpc.workspace.uploadAndAnalyzeMedia.useMutation({
+    onSuccess: () => {
+      refetchWorkspace();
+      setIsUploading(false);
+      // Reset loading state to prepare for new analysis
+      resetState();
+    },
+    onError: () => {
+      setIsUploading(false);
+    },
+  });
   const deleteFileMutation = trpc.workspace.deleteFiles.useMutation({
     onSuccess: () => {
       refetchWorkspace();
     },
   });
+  
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      setIsUploading(true);
       try {
-        const result = await uploadFileMutation.mutateAsync({
-          files: [{
-            filename: file.name,
-            contentType: file.type,
-            size: file.size,
-          }],
-          id: id as string,
-        });
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          
+          // Convert file to base64
+          const base64Content = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = reader.result as string;
+              // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+              const base64 = result.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          await uploadAndAnalyzeMutation.mutateAsync({
+            workspaceId: id as string,
+            file: {
+              filename: file.name,
+              contentType: file.type,
+              size: file.size,
+              content: base64Content,
+            },
+            generateStudyGuide: true,
+            generateFlashcards: true,
+            generateWorksheet: true,
+          });
+        }
 
         setIsUploadOpen(false);
         
-        refetchWorkspace();
+        // The refetch will be handled by the onSuccess callback
       } catch (error) {
-        console.error('Error uploading file:', error);
+        console.error('Error uploading and analyzing files:', error);
       }
     }
   };
@@ -258,16 +338,55 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
 
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const droppedFiles = Array.from(e.dataTransfer.files);
-    setIsUploadOpen(false);
+    
+    setIsUploading(true);
+    try {
+      for (const file of droppedFiles) {
+        // Convert file to base64
+        const base64Content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+            const base64 = result.split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        await uploadAndAnalyzeMutation.mutateAsync({
+          workspaceId: id as string,
+          file: {
+            filename: file.name,
+            contentType: file.type,
+            size: file.size,
+            content: base64Content,
+          },
+          generateStudyGuide: true,
+          generateFlashcards: true,
+          generateWorksheet: true,
+        });
+      }
+      
+      setIsUploadOpen(false);
+      // The refetch will be handled by the onSuccess callback
+    } catch (error) {
+      console.error('Error uploading and analyzing dropped files:', error);
+    }
   };
 
   const handleUploadClick = () => {
-    fileInputRef.current?.click();
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
   };
+
+  const pathname = usePathname();
 
   return (
     <div className="flex h-screen">
@@ -317,9 +436,9 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
               
               <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
                 <DialogTrigger asChild>
-                  <Button className="gradient-primary" size="sm">
+                  <Button className="gradient-primary" size="sm" disabled={isUploading}>
                     <Upload className="h-4 w-4 mr-2" />
-                    Upload File
+                    {isUploading ? 'Uploading...' : 'Upload File'}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg">
@@ -333,10 +452,12 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
                       onClick={handleUploadClick}
-                      className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ${
-                        isDragOver 
-                          ? 'border-primary bg-primary/5 scale-105' 
-                          : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/20'
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
+                        isUploading 
+                          ? 'border-muted-foreground/25 bg-muted/10 cursor-not-allowed' 
+                          : isDragOver 
+                            ? 'border-primary bg-primary/5 scale-105 cursor-pointer' 
+                            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/20 cursor-pointer'
                       }`}
                     >
                       <Upload className={`mx-auto h-12 w-12 mb-4 transition-colors ${
@@ -344,10 +465,10 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
                       }`} />
                       <div className="space-y-2">
                         <p className="text-lg font-medium">
-                          {isDragOver ? 'Drop files here' : 'Drag and drop files here'}
+                          {isUploading ? 'Uploading files...' : isDragOver ? 'Drop files here' : 'Drag and drop files here'}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          or click to browse files
+                          {isUploading ? 'Please wait while we process your files' : 'or click to browse files'}
                         </p>
                       </div>
                     </div>
@@ -382,10 +503,32 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             </CollapsibleContent>
           </Collapsible>
         </div>
-        <div className="m-5">
+        <div className={`${pathname.includes('chat') ? 'm-0' : 'm-5'} flex-1`}>
         {children}
         </div>
       </main>
+      
+      {/* Analysis Loading Overlay */}
+      <AnalysisLoadingOverlay
+        isVisible={showOverlay}
+        loadingState={loadingState}
+        onClose={hideOverlay}
+      />
+      
+      {/* Analysis Notification */}
+      <AnalysisNotification
+        loadingState={loadingState}
+        onClose={hideOverlay}
+      />
+      
+      {/* Test Panel (Development Only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <PusherTestPanel
+          workspaceId={id as string}
+          loadingState={loadingState}
+          onReset={resetState}
+        />
+      )}
     </div>
   );
 }

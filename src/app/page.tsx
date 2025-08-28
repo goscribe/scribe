@@ -13,7 +13,7 @@ export default function Home() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/workspace");
+      router.push("/dashboard");
     } else if (status === "unauthenticated") {
       router.push("/login");
     }

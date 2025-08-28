@@ -99,6 +99,25 @@ export default function FolderPage() {
     parentId: folderId,
   });
 
+  useEffect(() => {
+    if (workspaces) {
+      const { folderInfo, files, folders } = transformFolderData();
+      setFolderInfo(folderInfo);
+      setFiles(files);
+      setFolders(folders);
+    }
+  }, [workspaces, folderId]);
+
+  // Fetch folder details (name, description, meta) via TRPC
+  const { data: folderDetails } = trpc.workspace.getFolderInformation?.useQuery
+    ? trpc.workspace.getFolderInformation.useQuery({ id: folderId }, { enabled: !!folderId })
+    : ({ data: undefined } as never);
+
+
+  if (!folderDetails) {
+    return <div>Folder not found</div>;
+  }
+
   // Simple data transformation with normal types
   const transformFolderData = () => {
     if (!workspaces) return { folderInfo: null, files: [], folders: [] };
@@ -109,9 +128,9 @@ export default function FolderPage() {
       name: workspace.title || "Untitled File",
       type: "file",
       lastModified: workspace.updatedAt ? new Date(workspace.updatedAt).toLocaleDateString() : "Unknown",
-      size: "Unknown", // You can fetch this separately if needed
-      isStarred: false, // You can fetch this separately if needed
-      sharedWith: [], // You can fetch this separately if needed
+      size: "Unknown",
+      isStarred: false,
+      sharedWith: [],
     })) || [];
 
     // Get subfolders that belong to this folder
@@ -120,34 +139,25 @@ export default function FolderPage() {
       name: folder.name || "Untitled Folder",
       type: "folder",
       lastModified: folder.updatedAt ? new Date(folder.updatedAt).toLocaleDateString() : "Unknown",
-      size: "Unknown", // You can fetch this separately if needed
-      isStarred: false, // You can fetch this separately if needed
-      sharedWith: [], // You can fetch this separately if needed
+      size: "Unknown",
+      isStarred: false,
+      sharedWith: [],
     })) || [];
 
-    // For now, we'll create a mock folder info since we don't have the parent folder details
-    // In a real app, you might want to fetch the parent folder details separately
+    // Use real folder details when available
     const folderInfo: FolderInfo = {
       id: folderId,
-      name: "Current Folder", // This should come from a separate API call
-      description: "",
+      name: folderDetails?.folder.name,
       itemCount: files.length + folders.length,
-      lastModified: "Unknown",
+      lastModified: folderDetails?.folder.updatedAt
+        ? new Date(folderDetails.folder.updatedAt).toLocaleDateString()
+        : "Unknown",
       color: getFolderColor(folderId),
-      createdBy: "Unknown",
+      createdBy: folderDetails?.folder.ownerId || "Unknown",
     };
 
     return { folderInfo, files, folders };
   };
-
-  useEffect(() => {
-    if (workspaces) {
-      const { folderInfo, files, folders } = transformFolderData();
-      setFolderInfo(folderInfo);
-      setFiles(files);
-      setFolders(folders);
-    }
-  }, [workspaces, folderId]);
 
   const handleFileClick = (fileId: string) => {
     router.push(`/workspace/${fileId}`);
@@ -331,7 +341,7 @@ export default function FolderPage() {
                 {filteredItems.map((item) => (
                   <Card
                     key={item.id}
-                    className="card-hover cursor-pointer"
+                    className="card-hover cursor-pointer group"
                     onClick={() => item.type === "folder" ? handleFolderClick(item.id) : handleFileClick(item.id)}
                   >
                     <CardContent className="p-4">
@@ -397,7 +407,7 @@ export default function FolderPage() {
                 {filteredItems.map((item) => (
                   <Card
                     key={item.id}
-                    className="card-hover cursor-pointer"
+                    className="card-hover cursor-pointer group"
                     onClick={() => item.type === "folder" ? handleFolderClick(item.id) : handleFileClick(item.id)}
                   >
                     <CardContent className="p-4">

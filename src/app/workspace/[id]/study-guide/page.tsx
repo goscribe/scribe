@@ -4,10 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { 
   Save, 
   Edit3, 
-  Trash2, 
   Download, 
   Share2, 
-  Settings,
   Bold,
   Italic,
   List as ListIcon,
@@ -16,17 +14,14 @@ import {
   Code,
   Link,
   Image,
-  Undo,
-  Redo,
-  Eye,
-  EyeOff
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import EditorJS from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import List from "@editorjs/list";
@@ -37,25 +32,27 @@ import ImageTool from "@editorjs/image";
 import "./page.css";
 import { trpc } from "@/lib/trpc";
 import { useParams } from "next/navigation";
-
-interface StudyGuide {
-    id: string;
-    title: string;
-    content: string; // JSON string for EditorJS data
-    lastModified: string;
-    workspaceId: string;
-}
+import { toast } from "sonner";
+import EditorJSMarkdownConverter from '@vingeray/editorjs-markdown-converter';
+import { usePusherStudyGuide } from "@/hooks/use-pusher-study-guide";
 
 export default function StudyGuidePanel() {
     const params = useParams();
     const workspaceId = params.id as string;
     
+    // Pusher integration
+    const { 
+      isConnected, 
+      isGenerating, 
+      generationProgress,
+      subscribeToStudyGuide 
+    } = usePusherStudyGuide(workspaceId);
+    
     // TRPC queries and mutations
-    const { data, isLoading, error } = trpc.studyguide.get.useQuery({
-        workspaceId,
-    }, {
-        enabled: !!workspaceId,
-    });
+    const { data, isLoading, error } = trpc.studyguide.get.useQuery(
+        { workspaceId },
+        { enabled: !!workspaceId }
+    );
 
     const guideInfo = data;
     const guide = data?.latestVersion;
@@ -76,12 +73,32 @@ export default function StudyGuidePanel() {
 
     const editorRef = useRef<EditorJS | null>(null);
 
-
+    // Subscribe to real-time updates
+    useEffect(() => {
+        if (isConnected) {
+            subscribeToStudyGuide({
+                onGuideUpdate: (updatedGuide) => {
+                    // Guide will be updated via refetch
+                    toast.success("Study guide updated!");
+                },
+                onGenerationStart: () => {
+                    toast.info("Starting study guide generation...");
+                },
+                onGenerationComplete: (guide) => {
+                    toast.success("Study guide generated successfully!");
+                    utils.studyguide.get.invalidate({ workspaceId });
+                },
+                onGenerationError: (error) => {
+                    toast.error(`Generation failed: ${error}`);
+                },
+            });
+        }
+    }, [isConnected, subscribeToStudyGuide, utils.studyguide, workspaceId]);
 
     // Initialize title when guide data loads
     useEffect(() => {
         if (guide) {
-            setTitle(guideInfo?.artifactId || "Untitled Study Guide");
+            setTitle(guideInfo?.title || "Untitled Study Guide");
             setLastSaved(guideInfo?.latestVersion?.createdAt.toLocaleString() || "Never");
         }
     }, [guide]);
@@ -95,7 +112,12 @@ export default function StudyGuidePanel() {
             }
         }
 
-        const editorData = guide?.content && JSON.parse(guide.content).blocks ? JSON.parse(guide.content) : {
+        const editorData = guide?.content ? (
+            guide.content.startsWith("{") || guide.content.startsWith("[") ? JSON.parse(guide.content) : {
+                time: Date.now(),
+                blocks: EditorJSMarkdownConverter.toBlocks(guide.content)
+            }
+        ) : {
             time: Date.now(),
             blocks: [
                 {
@@ -114,10 +136,12 @@ export default function StudyGuidePanel() {
             ],
         };
 
+        console.log(editorData)
+
         editorRef.current = new EditorJS({
             holder: "editorjs-container",
             data: editorData,
-            tools: {
+            tools: ({
                 header: {
                     class: Header,
                     config: {
@@ -157,7 +181,8 @@ export default function StudyGuidePanel() {
                         }
                     }
                 },
-            },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            }) as unknown as Record<string, any>,
             readOnly: !isEditing,
             placeholder: 'Start writing your study notes...',
             onChange: () => {
@@ -192,9 +217,8 @@ export default function StudyGuidePanel() {
                 // Update existing guide
                 await updateGuideMutation.mutateAsync({
                     workspaceId,
-                    title: guideInfo?.artifactId,
+                    title: title,
                     content: JSON.stringify(savedData),
-                    workspaceId,
                 });
             
             setLastSaved("Just now");
@@ -241,28 +265,13 @@ export default function StudyGuidePanel() {
         // You could add a toast notification here
     };
 
-    if (isLoading) {
+    if (isLoading || isGenerating) {
         return (
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="animate-pulse">
-                        <div className="h-6 bg-muted rounded w-48 mb-2"></div>
-                        <div className="h-4 bg-muted rounded w-64"></div>
-                    </div>
-                    <div className="animate-pulse">
-                        <div className="h-9 bg-muted rounded w-20"></div>
-                    </div>
-                </div>
-                <Card className="shadow-soft">
-                    <CardContent className="p-6">
-                        <div className="animate-pulse space-y-4">
-                            <div className="h-4 bg-muted rounded w-full"></div>
-                            <div className="h-4 bg-muted rounded w-3/4"></div>
-                            <div className="h-4 bg-muted rounded w-1/2"></div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            <LoadingSkeleton 
+                type="study-guide" 
+                isGenerating={isGenerating}
+                generationProgress={generationProgress}
+            />
         );
     }
 
@@ -295,6 +304,9 @@ export default function StudyGuidePanel() {
                     )}
                     <p className="text-sm text-muted-foreground">
                         {guide ? `Last modified: ${lastSaved}` : "Create your study guide"}
+                        {!isConnected && (
+                            <span className="ml-2 text-xs text-orange-600">(Offline)</span>
+                        )}
                     </p>
                 </div>
                 
@@ -547,7 +559,7 @@ export default function StudyGuidePanel() {
             {/* Status Bar */}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center space-x-4">
-                    <span>Words: {guide?.content ? JSON.parse(guide.content).blocks.length : 0}</span>
+                    {/* <span>Words: {guide?.content ? JSON.parse(guide.content).blocks.length : 0}</span> */}
                     <span>Last saved: {lastSaved}</span>
                 </div>
                 <div className="flex items-center space-x-2">

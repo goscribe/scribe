@@ -1,15 +1,17 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Plus, Eye, Edit3, Calendar, Clock, Trash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 
 import { trpc } from "@/lib/trpc";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { RouterOutputs } from "@goscribe/server";
+import { usePusherWorksheet } from "@/hooks/use-pusher-worksheet";
 
 type Worksheet = RouterOutputs['worksheets']['get'];
 
@@ -17,6 +19,14 @@ export default function WorksheetPanel() {
   const params = useParams();
   const router = useRouter();
   const workspaceId = params.id as string;
+
+  // Pusher integration
+  const { 
+    isConnected, 
+    isGenerating, 
+    generationProgress,
+    subscribeToWorksheets 
+  } = usePusherWorksheet(workspaceId);
 
   // tRPC queries and mutations
   const { data: worksheets = [], isLoading, error, refetch } = trpc.worksheets.list.useQuery(
@@ -43,6 +53,36 @@ export default function WorksheetPanel() {
       toast.error(error.message || "Failed to delete worksheet");
     },
   });
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (isConnected) {
+      subscribeToWorksheets({
+        onNewWorksheet: (worksheet) => {
+          // Worksheet will be added via refetch
+          toast.success("New worksheet created!");
+        },
+        onWorksheetUpdate: (worksheet) => {
+          // Worksheet will be updated via refetch
+          toast.success("Worksheet updated!");
+        },
+        onWorksheetDelete: (worksheetId) => {
+          // Worksheet will be removed via refetch
+          toast.success("Worksheet deleted!");
+        },
+        onGenerationStart: () => {
+          toast.info("Starting worksheet generation...");
+        },
+        onGenerationComplete: (worksheet) => {
+          toast.success("Worksheet generated successfully!");
+          refetch();
+        },
+        onGenerationError: (error) => {
+          toast.error(`Generation failed: ${error}`);
+        },
+      });
+    }
+  }, [isConnected, subscribeToWorksheets, refetch]);
 
   const generateNewWorksheet = () => {
     createMutation.mutate({
@@ -110,21 +150,13 @@ export default function WorksheetPanel() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isGenerating) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Worksheets</h3>
-            <p className="text-sm text-muted-foreground">
-              Practice exercises and problems to test your knowledge
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
+      <LoadingSkeleton 
+        type="worksheets" 
+        isGenerating={isGenerating}
+        generationProgress={generationProgress}
+      />
     );
   }
 
@@ -158,6 +190,9 @@ export default function WorksheetPanel() {
           <h3 className="text-lg font-semibold">Worksheets</h3>
           <p className="text-sm text-muted-foreground">
             Practice exercises and problems to test your knowledge
+            {!isConnected && (
+              <span className="ml-2 text-xs text-orange-600">(Offline)</span>
+            )}
           </p>
         </div>
         <Button 

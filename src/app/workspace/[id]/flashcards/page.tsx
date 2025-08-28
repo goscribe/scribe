@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, RotateCcw, Edit3, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FlashcardCreateModal } from "@/components/flashcard-create-modal";
 import { FlashcardEditModal } from "@/components/flashcard-edit-modal";
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { trpc } from "@/lib/trpc";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { RouterOutputs } from "@goscribe/server";
+import { usePusherFlashcards } from "@/hooks/use-pusher-flashcards";
 
 type Flashcard = RouterOutputs['flashcards']['listCards'][number];
 
@@ -21,6 +23,14 @@ export default function FlashcardsPanel() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
+
+  // Pusher integration
+  const { 
+    isConnected, 
+    isGenerating, 
+    generationProgress,
+    subscribeToFlashcards 
+  } = usePusherFlashcards(workspaceId);
 
   // tRPC queries and mutations
   const { data: cards = [], isLoading, error, refetch } = trpc.flashcards.listCards.useQuery(
@@ -58,6 +68,36 @@ export default function FlashcardsPanel() {
       toast.error(error.message || "Failed to update flashcard");
     },
   });
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (isConnected) {
+      subscribeToFlashcards({
+        onNewCard: (card) => {
+          // Card will be added via refetch
+          toast.success("New flashcard added!");
+        },
+        onCardUpdate: (card) => {
+          // Card will be updated via refetch
+          toast.success("Flashcard updated!");
+        },
+        onCardDelete: (cardId) => {
+          // Card will be removed via refetch
+          toast.success("Flashcard deleted!");
+        },
+        onGenerationStart: () => {
+          toast.info("Starting flashcard generation...");
+        },
+        onGenerationComplete: (cards) => {
+          toast.success(`Generated ${cards.length} flashcards!`);
+          refetch();
+        },
+        onGenerationError: (error) => {
+          toast.error(`Generation failed: ${error}`);
+        },
+      });
+    }
+  }, [isConnected, subscribeToFlashcards, refetch]);
 
   const flipCard = (cardId: string) => {
     setFlippedCards(prev => {
@@ -111,21 +151,13 @@ export default function FlashcardsPanel() {
     setFlippedCards(new Set());
   };
 
-  if (isLoading) {
+  if (isLoading || isGenerating) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Flashcards</h3>
-            <p className="text-sm text-muted-foreground">
-              Interactive study cards for quick review
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
+      <LoadingSkeleton 
+        type="flashcards" 
+        isGenerating={isGenerating}
+        generationProgress={generationProgress}
+      />
     );
   }
 
@@ -159,6 +191,9 @@ export default function FlashcardsPanel() {
           <h3 className="text-lg font-semibold">Flashcards</h3>
           <p className="text-sm text-muted-foreground">
             Interactive study cards for quick review
+            {!isConnected && (
+              <span className="ml-2 text-xs text-orange-600">(Offline)</span>
+            )}
           </p>
         </div>
         <div className="flex space-x-2">

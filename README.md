@@ -37,6 +37,17 @@ The app is configured to connect to `@goscribe/server` via tRPC. Set the server 
 GOSCRIBE_SERVER_URL=http://localhost:3001
 ```
 
+### Pusher Setup (Real-time Updates)
+
+For real-time AI analysis progress tracking, configure Pusher in your `.env.local`:
+
+```
+NEXT_PUBLIC_PUSHER_KEY=your-pusher-key-here
+NEXT_PUBLIC_PUSHER_CLUSTER=us2
+```
+
+You can get these values from your [Pusher dashboard](https://dashboard.pusher.com/).
+
 The tRPC client is automatically configured and available throughout the app. Use the `trpc` hook in your components:
 
 ```tsx

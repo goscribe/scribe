@@ -11,6 +11,7 @@ import { Brain, BookOpen, Headphones, Mail, Lock, ArrowRight } from "lucide-reac
 import Link from "next/link";
 import { client } from "@/lib/trpc-client";
 import { useSession } from "@/lib/useSession";
+import { useCookies } from "react-cookie";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,6 +21,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const [cookies, setCookies] = useCookies(["authToken"]);
   
   // Determine status based on @auth session
   const status = sessionLoading ? "loading" : session?.user ? "authenticated" : "unauthenticated";
@@ -48,6 +51,8 @@ export default function LoginPage() {
 
     try {
       const res = await client.auth.login.mutate({ email, password });
+
+      setCookies("authToken", res.token, { path: "/" });
 
       router.push("/workspace");
     } catch (error) {
@@ -83,7 +88,7 @@ export default function LoginPage() {
             <Button
               onClick={async () => {
                 try {
-                  await signIn("google", { callbackUrl: "/workspace" });
+                  // await signIn("google", { callbackUrl: "/workspace" });
                 } catch (error) {
                   console.error('Sign in failed:', error);
                 }
