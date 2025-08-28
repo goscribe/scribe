@@ -23,10 +23,12 @@ module.exports = {
   		keyframes: {
   			'accordion-down': {
   				from: {
-  					height: '0'
+  					opacity: '1',
+                    transform: 'translateY(-100%)'
   				},
   				to: {
-  					height: 'var(--radix-accordion-content-height)'
+  					opacity: '0',
+                    transform: 'translateY(0%)'
   				}
   			},
   			'accordion-up': {

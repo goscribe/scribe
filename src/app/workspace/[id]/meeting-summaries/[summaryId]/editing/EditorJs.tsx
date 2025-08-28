@@ -66,7 +66,7 @@ export default function MeetingSummaryEditorJsE({ dsummary, isOnSave, setOnSave}
         if (isOnSave){
             handleSave();
         }
-    }, [dsummary]);
+    }, [dsummary, handleSave, isOnSave]);
 
     return (
         <Card className="shadow-soft">

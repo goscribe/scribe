@@ -8,10 +8,8 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {ArrowLeftIcon} from "lucide-react";
 import {useParams, useRouter} from "next/navigation";
-import {
-    MeetingSummary,
-    SummaryMetadata
-} from "@/app/workspace/[id]/meeting-summaries/page";
+import {MeetingSummary} from "@/app/workspace/[id]/meeting-summaries/page";
+import {SummaryMetadata} from "@/app/workspace/[id]/meeting-summaries/summaryInfoComponents"
 
 export default function MeetingSummaryPage() {
     const { id, summaryId } = useParams();

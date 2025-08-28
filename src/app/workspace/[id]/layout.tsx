@@ -190,12 +190,12 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         router.push(`/workspace/${id}/${tab}`);
       }} />
       <main className="flex-1 overflow-auto">
-      <div className="border-b bg-white p-5">
+        <div className="border-b bg-white p-5">
           <Collapsible open={isMediaOpen} onOpenChange={setIsMediaOpen}>
             <CollapsibleTrigger asChild>
               <Button 
                 variant="ghost" 
-                className="w-full justify-between h-auto hover:bg-muted/30 transition-colors"
+                className="w-full justify-between h-auto hover:bg-muted/30 transition-colors collapsible-pre"
               >
                 <div className="flex items-center space-x-3">
                   <FolderOpen className="h-5 w-5 text-primary/60" />
@@ -209,7 +209,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
                 <ChevronDown className={`h-4 w-4 transition-transform ${isMediaOpen ? 'rotate-180' : ''}`} />
               </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent className="animate-accordion-down bg-white">
+            <CollapsibleContent className="bg-white">
               <MediaShelf />
             </CollapsibleContent>
           </Collapsible>

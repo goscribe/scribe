@@ -124,8 +124,8 @@ export const MediaShelf = () => {
   };
 
   return (
-    <div className="space-y-4 bg-white p-4 rounded-lg">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 bg-white p-4 rounded-lg animate-accordion-down">
+      <div className="flex items-center justify-between  ">
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogTrigger asChild>
             <Button className="gradient-primary">
@@ -162,7 +162,7 @@ export const MediaShelf = () => {
                   </p>
                 </div>
               </div>
-              
+
               {/* Hidden File Input */}
               <input
                 ref={fileInputRef}
@@ -172,7 +172,7 @@ export const MediaShelf = () => {
                 className="hidden"
                 multiple
               />
-              
+
               <p className="text-xs text-muted-foreground text-center">
                 Supported formats: PDF, DOCX, PPT, TXT, audio files (MP3, WAV), and images
               </p>
@@ -201,7 +201,7 @@ export const MediaShelf = () => {
                       <p className="text-xs text-muted-foreground">{file.uploadedAt}</p>
                     </div>
                   </div>
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -213,7 +213,7 @@ export const MediaShelf = () => {
                         <Download className="mr-2 h-4 w-4" />
                         Download
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => handleFileDelete(file.id)}
                       >
@@ -230,7 +230,7 @@ export const MediaShelf = () => {
       </div>
 
       {files.length === 0 && (
-        <div className="text-center py-12">
+        <div className="text-center py-12  ">
           <File className="mx-auto h-12 w-12 text-muted-foreground/50" />
           <h3 className="mt-4 text-lg font-medium">No files uploaded</h3>
           <p className="mt-2 text-sm text-muted-foreground">
