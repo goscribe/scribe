@@ -4,21 +4,30 @@ import { useState } from "react";
 import { 
   Folder, 
   FileText, 
+  MoreHorizontal, 
   Grid3X3, 
   List, 
   Plus,
   Search,
+  ArrowLeft,
+  FolderPlus,
+  Upload,
+  Star,
+  Users,
+  Calendar,
+  TrendingUp,
+  Clock,
+  Zap,
   Sparkles,
+  Activity,
   BarChart3,
-  Calendar
+  Settings,
+  Bell
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { FolderCard } from "@/components/dashboard/FolderCard";
-import { FileCard } from "@/components/dashboard/FileCard";
-import { ItemGrid } from "@/components/dashboard/ItemGrid";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -303,32 +312,80 @@ export default function DashboardPage() {
         </div>
         
         {viewMode === "grid" ? (
-          <ItemGrid>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {filteredFolders.map((folder) => (
-              <FolderCard
+              <Card
                 key={folder.id}
-                id={folder.id}
-                name={folder.name}
-                itemCount={folder.itemCount}
-                lastModified={folder.lastModified}
-                colorClass={folder.color}
-                onClick={handleFolderClick}
-              />
+                className="card-hover cursor-pointer"
+                onClick={() => handleFolderClick(folder.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className={`p-3 rounded-xl bg-gradient-to-r ${folder.color} text-white`}>
+                      <Folder className="h-8 w-8" />
+                    </div>
+                    
+                    <div className="space-y-1 w-full">
+                      <h3 className="font-medium text-sm line-clamp-2">
+                        {folder.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {folder.itemCount} items
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {folder.lastModified}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-          </ItemGrid>
+          </div>
         ) : (
           <div className="space-y-2">
             {filteredFolders.map((folder) => (
-              <FolderCard
+              <Card
                 key={folder.id}
-                id={folder.id}
-                name={folder.name}
-                itemCount={folder.itemCount}
-                lastModified={folder.lastModified}
-                colorClass={folder.color}
-                variant="list"
-                onClick={handleFolderClick}
-              />
+                className="card-hover cursor-pointer"
+                onClick={() => handleFolderClick(folder.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg bg-gradient-to-r ${folder.color} text-white`}>
+                        <Folder className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{folder.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {folder.itemCount} items • {folder.lastModified}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Rename</DropdownMenuItem>
+                        <DropdownMenuItem>Share</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
@@ -348,34 +405,122 @@ export default function DashboardPage() {
         </div>
         
         {viewMode === "grid" ? (
-          <ItemGrid>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {filteredFiles.map((file) => (
-              <FileCard
+              <Card
                 key={file.id}
-                id={file.id}
-                name={file.name}
-                size={file.size}
-                lastModified={file.lastModified}
-                isStarred={file.isStarred}
-                shared={!!file.sharedWith?.length}
-                onClick={handleFileClick}
-              />
+                className="card-hover cursor-pointer"
+                onClick={() => handleFileClick(file.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className="relative">
+                      <FileText className="h-12 w-12 text-muted-foreground" />
+                      {file.isStarred && (
+                        <Star className="absolute -top-1 -right-1 h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute -top-1 -right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Rename</DropdownMenuItem>
+                          <DropdownMenuItem>Share</DropdownMenuItem>
+                          <DropdownMenuItem>Star</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive">
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    
+                    <div className="space-y-1 w-full">
+                      <h3 className="font-medium text-sm line-clamp-2">
+                        {file.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {file.size}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {file.lastModified}
+                      </p>
+                      {file.sharedWith && (
+                        <Badge variant="outline" className="text-xs">
+                          Shared
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-          </ItemGrid>
+          </div>
         ) : (
           <div className="space-y-2">
             {filteredFiles.map((file) => (
-              <FileCard
+              <Card
                 key={file.id}
-                id={file.id}
-                name={file.name}
-                size={file.size}
-                lastModified={file.lastModified}
-                isStarred={file.isStarred}
-                shared={!!file.sharedWith?.length}
-                variant="list"
-                onClick={handleFileClick}
-              />
+                className="card-hover cursor-pointer"
+                onClick={() => handleFileClick(file.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="relative">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                        {file.isStarred && (
+                          <Star className="absolute -top-1 -right-1 h-3 w-3 text-yellow-500 fill-yellow-500" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{file.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {file.size} • {file.lastModified}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      {file.sharedWith && (
+                        <Badge variant="outline" className="text-xs">
+                          Shared
+                        </Badge>
+                      )}
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Rename</DropdownMenuItem>
+                          <DropdownMenuItem>Share</DropdownMenuItem>
+                          <DropdownMenuItem>Star</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive">
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
