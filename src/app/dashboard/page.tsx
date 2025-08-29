@@ -330,9 +330,6 @@ export default function DashboardPage() {
                         {folder.name}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        {folder.itemCount} items
-                      </p>
-                      <p className="text-xs text-muted-foreground">
                         {folder.lastModified}
                       </p>
                     </div>
@@ -357,9 +354,6 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <h3 className="font-medium">{folder.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {folder.itemCount} items • {folder.lastModified}
-                        </p>
                       </div>
                     </div>
                     
@@ -447,17 +441,6 @@ export default function DashboardPage() {
                       <h3 className="font-medium text-sm line-clamp-2">
                         {file.name}
                       </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {file.size}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {file.lastModified}
-                      </p>
-                      {file.sharedWith && (
-                        <Badge variant="outline" className="text-xs">
-                          Shared
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -483,19 +466,10 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <h3 className="font-medium">{file.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {file.size} • {file.lastModified}
-                        </p>
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      {file.sharedWith && (
-                        <Badge variant="outline" className="text-xs">
-                          Shared
-                        </Badge>
-                      )}
-                      
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button

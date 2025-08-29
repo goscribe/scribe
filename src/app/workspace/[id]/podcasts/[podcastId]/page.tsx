@@ -174,10 +174,6 @@ export default function PodcastDetailPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" disabled>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Podcasts
-          </Button>
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-64 mb-2"></div>
             <div className="h-4 bg-muted rounded w-32"></div>
@@ -204,10 +200,6 @@ export default function PodcastDetailPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button onClick={goBack} variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Podcasts
-          </Button>
         </div>
         <div className="text-center py-8">
           <h3 className="text-lg font-semibold text-destructive mb-2">Error Loading Podcast</h3>
@@ -235,10 +227,6 @@ export default function PodcastDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button onClick={goBack} variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Podcasts
-          </Button>
           <div>
             <h1 className="text-2xl font-bold">{episode.title}</h1>
             <p className="text-sm text-muted-foreground">

@@ -35,15 +35,11 @@ export function AnalysisLoadingOverlay({ isVisible, loadingState, onClose }: Ana
 
   if (!isVisible) return null;
 
-  const getStepIcon = (stepName: string, isCompleted: boolean, isActive: boolean) => {
+  const getStepIcon = (stepName: string, isCompleted: boolean) => {
     if (isCompleted) {
       return <CheckCircle className="h-5 w-5 text-green-500" />;
     }
-    
-    if (isActive) {
-      return <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />;
-    }
-    
+      
     switch (stepName) {
       case 'fileAnalysis':
         return <FileText className="h-5 w-5 text-muted-foreground" />;
@@ -127,31 +123,23 @@ export function AnalysisLoadingOverlay({ isVisible, loadingState, onClose }: Ana
         <div className="space-y-3">
           {steps.map((step) => {
             const isCompleted = loadingState.progress[step.key as keyof typeof loadingState.progress];
-            const isActive = loadingState.currentStep.toLowerCase().includes(step.key.toLowerCase());
             
             return (
               <div
                 key={step.key}
                 className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                  isActive ? 'bg-blue-50 border border-blue-200' : 
                   isCompleted ? 'bg-green-50 border border-green-200' : 
                   'bg-gray-50 border border-gray-200'
                 }`}
               >
-                {getStepIcon(step.key, isCompleted, isActive)}
+                {getStepIcon(step.key, isCompleted)}
                 <div className="flex-1">
                   <p className={`text-sm font-medium ${
-                    isActive ? 'text-blue-900' : 
                     isCompleted ? 'text-green-900' : 
                     'text-gray-700'
                   }`}>
                     {step.label}
                   </p>
-                  {isActive && (
-                    <p className="text-xs text-blue-600 mt-1">
-                      In progress...
-                    </p>
-                  )}
                 </div>
                 {isCompleted && (
                   <Badge variant="secondary" className="bg-green-100 text-green-800">

@@ -262,6 +262,13 @@ export class PusherManager {
         isAnalyzing: false,
         currentStep: 'Analysis completed successfully!',
         completedArtifacts: data.artifacts,
+        progress: {
+          fileAnalysis: false,
+          studyGuide: false,
+          flashcards: false,
+          worksheet: false,
+          cleanup: false,
+        },
       });
     });
 
@@ -271,6 +278,13 @@ export class PusherManager {
       this.updateState({
         isAnalyzing: false,
         currentStep: 'Error occurred during analysis',
+        progress: {
+          fileAnalysis: false,
+          studyGuide: false,
+          flashcards: false,
+          worksheet: false,
+          cleanup: false,
+        },
         errors: [...this.currentState.errors, data.error],
       });
     });

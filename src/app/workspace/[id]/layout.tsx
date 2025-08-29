@@ -1,10 +1,9 @@
 "use client";
 
-import { BookOpen, Brain, FileText, MessageSquare, Podcast, ChevronDown, Search, Plus, FolderOpen, Upload, PanelLeftClose, PanelLeftOpen, InfoIcon, MessageCircle } from "lucide-react";
+import { BookOpen, Brain, FileText, Podcast, ChevronDown, Search, FolderOpen, Upload, PanelLeftClose, PanelLeftOpen, InfoIcon, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AnalysisLoadingOverlay } from "@/components/analysis-loading-overlay";
-import { AnalysisNotification } from "@/components/analysis-notification";
 import { PusherTestPanel } from "@/components/pusher-test-panel";
 import { usePusherAnalysis } from "@/hooks/use-pusher-analysis";
 import {
@@ -19,8 +18,8 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { MediaShelf } from "@/components/media-shelf";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export type WorkspaceTab = 'def' | 'study-guide' | 'flashcards' | 'worksheet' | 'summaries' | 'podcasts' | 'chat';
@@ -260,6 +259,11 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
   });
 
 
+  useEffect(() => {
+    if (loadingState.isAnalyzing) {
+      setIsUploadOpen(false);
+    }
+  }, [loadingState]);
 
   const files = workspace?.uploads || []; // TODO: fix this
 
@@ -388,6 +392,19 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
   const pathname = usePathname();
 
+  // Emit Sonner toasts instead of inline alert
+  useEffect(() => {
+    if (!loadingState) return;
+    if (!loadingState.isAnalyzing) {
+      if (loadingState.errors.length > 0) {
+        toast.error(loadingState.errors[0] || 'Analysis failed');
+      } else if (Object.keys(loadingState.completedArtifacts).length > 0) {
+        const count = Object.keys(loadingState.completedArtifacts).length;
+        toast.success(`Analysis complete: ${count} artifact${count === 1 ? '' : 's'} generated`);
+      }
+    }
+  }, [loadingState]);
+
   return (
     <div className="flex h-screen">
       <WorkspaceSidebar 
@@ -515,11 +532,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
         onClose={hideOverlay}
       />
       
-      {/* Analysis Notification */}
-      <AnalysisNotification
-        loadingState={loadingState}
-        onClose={hideOverlay}
-      />
+      {/* Sonner toasts for analysis notifications handled via useEffect */}
       
       {/* Test Panel (Development Only) */}
       {process.env.NODE_ENV === 'development' && (

@@ -255,9 +255,6 @@ export default function FolderPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">{folderInfo.name}</h1>
-            <p className="text-muted-foreground">
-              {folderInfo.itemCount} items • Last modified {folderInfo.lastModified}
-            </p>
           </div>
         </div>
       </div>
@@ -385,12 +382,6 @@ export default function FolderPage() {
                           <h3 className="font-medium text-sm line-clamp-2">
                             {item.name}
                           </h3>
-                          <p className="text-xs text-muted-foreground">
-                            {item.size}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.lastModified}
-                          </p>
                           {item.sharedWith && item.sharedWith.length > 0 && (
                             <Badge variant="outline" className="text-xs">
                               Shared
@@ -427,9 +418,6 @@ export default function FolderPage() {
                           </div>
                           <div>
                             <h3 className="font-medium">{item.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {item.size} • {item.lastModified}
-                            </p>
                           </div>
                         </div>
                         

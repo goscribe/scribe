@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Plus, Eye, Edit3, Play, Pause, Download, Calendar, Clock, Loader2, Mic, Trash2 } from "lucide-react";
+import { Plus, Eye, Edit3, Download, Calendar, Clock, Loader2, Mic, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+// removed Progress overlay in favor of Sonner toasts
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { trpc } from "@/lib/trpc";
 import { RouterOutputs } from "@goscribe/server";
 import { PodcastGenerationForm, PodcastGenerationForm as PodcastGenerationFormType } from "@/components/podcast-generation-form";
-import { PodcastGenerationProgress } from "@/components/podcast-generation-progress";
+import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
 import { usePusherPodcast } from "@/hooks/use-pusher-podcast";
 
 type PodcastEpisode = RouterOutputs['podcast']['listEpisodes'][number];
@@ -54,6 +55,7 @@ export default function PodcastsPanel() {
     } catch (error) {
       console.error("Failed to generate podcast:", error);
       setIsGenerating(false);
+      toast.error("Failed to start podcast generation");
     }
   };
 
@@ -93,8 +95,58 @@ export default function PodcastsPanel() {
     }
   };
 
-  // Show progress overlay when generating
-  const showProgress = pusherState.isGenerating || isGenerating;
+  // Sonner custom progress toast with progress bar
+  useEffect(() => {
+    if (!pusherState) return;
+    const { isGenerating: generating, progress } = pusherState;
+
+    if (generating) {
+      if (progress.errors && progress.errors.length > 0) {
+        toast.error(progress.errors[0] || 'An error occurred during generation', { id: 'podcast-gen' });
+        toast.dismiss('podcast-gen-progress');
+        setIsGenerating(false);
+        return;
+      }
+
+      if (progress.stage === 'complete') {
+        toast.success('Podcast generated successfully!', { id: 'podcast-gen' });
+        toast.dismiss('podcast-gen-progress');
+        setIsGenerating(false);
+        return;
+      }
+
+      toast.custom(() => (
+        <div className="w-80 rounded-lg border bg-background shadow-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm font-medium">
+                {progress.stage === 'structuring' && 'Structuring content'}
+                {progress.stage === 'generating_audio' && 'Generating audio'}
+                {progress.stage === 'preparing_segments' && 'Preparing segments'}
+                {progress.stage === 'creating_summary' && 'Creating summary'}
+                {progress.stage === 'complete' && 'Completed'}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground">{Math.round(progress.progress || 0)}%</span>
+          </div>
+          <div className="text-xs text-muted-foreground mb-2">
+            {progress.currentStep || 'Working on it...'}
+          </div>
+          {progress.stage === 'generating_audio' && progress.totalSegments ? (
+            <div className="text-[11px] text-muted-foreground mb-2">
+              Segment {Math.max(1, (progress.currentSegment || 0))} of {progress.totalSegments}
+            </div>
+          ) : null}
+          <Progress value={Math.round(progress.progress || 0)} className="h-2" />
+        </div>
+      ), { id: 'podcast-gen-progress', duration: Infinity });
+    } else if (!generating && isGenerating) {
+      setIsGenerating(false);
+      toast.dismiss('podcast-gen');
+      toast.dismiss('podcast-gen-progress');
+    }
+  }, [pusherState, isGenerating]);
 
   if (isLoading) {
     return (
@@ -303,22 +355,7 @@ export default function PodcastsPanel() {
         </Card>
       )}
 
-      {/* Real-time Generation Progress */}
-      <PodcastGenerationProgress
-        isVisible={showProgress}
-        progress={pusherState.progress}
-        onClose={() => {
-          // Only allow closing if generation is complete or has errors
-          if (pusherState.progress.stage === 'complete' || pusherState.progress.errors.length > 0) {
-            setIsGenerating(false);
-          }
-        }}
-        onRetry={() => {
-          // Reset state and show form again
-          setIsGenerating(false);
-          setShowGenerationForm(true);
-        }}
-      />
+      {/* Sonner toasts handle progress UI */}
     </div>
   );
 }
