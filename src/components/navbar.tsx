@@ -26,6 +26,7 @@ import { trpc } from "@/lib/trpc";
 import { Textarea } from "./ui/textarea";
 import { useParams, useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface NavbarProps {
   onNewClick?: () => void;
@@ -114,20 +115,14 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
   const { folderId } = useParams();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm shadow-soft">
-      <div className="flex h-16 items-center justify-between px-4">
+    <header className="sticky top-0 z-40 w-full border-b bg-muted/40 backdrop-blur-sm">
+      <div className="flex h-12 items-center justify-between px-4">
         {/* Logo */}
-        <div className="flex items-center space-x-2" onClick={() => router.push("/dashboard")}>
-          <img src="/logo.png" alt="Scribe Logo" className="h-6 w-6" />
-          <span className="text-xl font-semibold">
+        <div className="flex items-center space-x-2 cursor-pointer" onClick={() => router.push("/dashboard")}>
+          <img src="/logo.png" alt="Scribe Logo" className="h-5 w-5" />
+          <span className="text-base font-semibold text-foreground">
             scribe
           </span>
-          {status === "authenticated" && (
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-xs text-green-600 font-medium">Live</span>
-            </div>
-          )}
         </div>
 
         {/* Search Bar */}
@@ -135,12 +130,12 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
             <Input
-              placeholder="Search files and folders..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={handleSearchChange}
               onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
               onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-              className="pl-10 bg-muted/50 border border-border focus:bg-card transition-colors"
+              className="pl-10 h-8 bg-muted/50 border-0 focus-visible:ring-1 transition-colors text-sm"
             />
             {/* Loading State */}
             {isSearching && (
@@ -198,6 +193,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
 
         {/* Right Actions */}
         <div className="flex items-center space-x-3">
+          <ThemeToggle />
           {status === "loading" ? (
             <div className="flex items-center space-x-2">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -208,10 +204,9 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
               {/* New Dropdown */}
               <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="gradient-primary hover:opacity-90">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button variant="default" size="sm" className="h-8">
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
                 New
-                <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -228,40 +223,36 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
+                  <Button variant="ghost" className="relative h-7 w-7 rounded-full p-0">
+                    <Avatar className="h-7 w-7">
                       <AvatarImage 
                         src={session?.user?.image || undefined} 
                         alt={getUserDisplayName()} 
                       />
-                      <AvatarFallback className="gradient-primary text-primary-foreground">
+                      <AvatarFallback className="text-xs border">
                         {getUserInitials(session?.user?.name)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-64" align="end">
-                  <div className="flex items-center justify-start gap-3 p-3">
-                    <Avatar className="h-10 w-10">
+                  <div className="flex items-center gap-3 p-3">
+                    <Avatar className="h-9 w-9">
                       <AvatarImage 
                         src={session?.user?.image || undefined} 
                         alt={getUserDisplayName()} 
                       />
-                      <AvatarFallback className="gradient-primary text-primary-foreground">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                         {getUserInitials(session?.user?.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{getUserDisplayName()}</p>
+                    <div className="flex flex-col space-y-0.5 leading-none">
+                      <p className="font-medium text-sm">{getUserDisplayName()}</p>
                       {session?.user?.email && (
-                        <p className="w-[200px] truncate text-sm text-muted-foreground">
+                        <p className="w-[180px] truncate text-xs text-muted-foreground">
                           {session.user.email}
                         </p>
                       )}
-                      <div className="flex items-center space-x-1">
-                        <Shield className="h-3 w-3 text-green-500" />
-                        <span className="text-xs text-green-600 font-medium">Authenticated</span>
-                      </div>
                     </div>
                   </div>
                   <DropdownMenuSeparator />
@@ -293,18 +284,13 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
             </>
           ) : (
             <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                <Shield className="h-3 w-3" />
-                <span>Guest</span>
-              </div>
               <Link href="/signup">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="h-8">
                   Sign Up
                 </Button>
               </Link>
               <Link href="/login">
-                <Button className="gradient-primary hover:opacity-90" size="sm">
-                  <Mail className="h-4 w-4 mr-2" />
+                <Button size="sm" className="h-8">
                   Sign In
                 </Button>
               </Link>
@@ -344,7 +330,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
               <Button variant="outline" onClick={() => setIsNewFileOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateFile} className="gradient-primary">
+              <Button onClick={handleCreateFile}>
                 Create File
               </Button>
             </div>
@@ -373,7 +359,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
               <Button variant="outline" onClick={() => setIsNewFolderOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateFolder} className="gradient-primary">
+              <Button onClick={handleCreateFolder}>
                 Create Folder
               </Button>
             </div>

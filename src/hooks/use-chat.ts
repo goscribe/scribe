@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { usePusherChat } from './use-pusher-chat';
+import { usePusherChat } from './pusher/use-pusher-chat';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { RouterOutputs } from '@goscribe/server';

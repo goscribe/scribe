@@ -140,3 +140,4 @@ Potential improvements for the chat system:
 - Message threading
 - Voice messages
 - Screen sharing integration
+

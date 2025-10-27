@@ -14,6 +14,7 @@ import {
   Code,
   Link,
   Image,
+  BookOpen,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,8 @@ import { trpc } from "@/lib/trpc";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import EditorJSMarkdownConverter from '@vingeray/editorjs-markdown-converter';
-import { usePusherStudyGuide } from "@/hooks/use-pusher-study-guide";
+import { usePusherStudyGuide } from "@/hooks/pusher/use-pusher-study-guide";
+import { StudyMode } from "@/components/study-guide/study-mode";
 
 export default function StudyGuidePanel() {
     const params = useParams();
@@ -66,10 +68,10 @@ export default function StudyGuidePanel() {
 
     const utils = trpc.useUtils();
 
-    const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<string>("");
+    const [isStudyMode, setIsStudyMode] = useState(false);
 
     const editorRef = useRef<EditorJS | null>(null);
 
@@ -183,7 +185,7 @@ export default function StudyGuidePanel() {
                 },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             }) as unknown as Record<string, any>,
-            readOnly: !isEditing,
+            readOnly: false,
             placeholder: 'Start writing your study notes...',
             onChange: () => {
                 // Auto-save functionality could be added here
@@ -205,7 +207,7 @@ export default function StudyGuidePanel() {
                 }
             }
         };
-    }, [guide, isEditing, isLoading, error]);
+    }, [guide, isLoading, error]);
 
     const handleSave = async () => {
         if (!editorRef.current) return;
@@ -222,26 +224,11 @@ export default function StudyGuidePanel() {
                 });
             
             setLastSaved("Just now");
-            setIsEditing(false);
         } catch (error) {
             console.error("Failed to save study guide:", error);
         } finally {
             setIsSaving(false);
         }
-    };
-
-    const handleEdit = () => {
-        setIsEditing(true);
-    };
-
-    const handleCancel = () => {
-        setIsEditing(false);
-        // Reset title to original
-        if (guide) {
-            setTitle("study guide");
-        }
-        // Reinitialize editor with original data
-        initializeEditor();
     };
 
     const handleExport = async () => {
@@ -287,293 +274,38 @@ export default function StudyGuidePanel() {
         );
     }
 
+    // Render study mode
+    if (isStudyMode && guide?.content) {
+        return (
+            <StudyMode 
+                content={guide.content}
+                onExit={() => setIsStudyMode(false)}
+            />
+        );
+    }
+
     return (
-        <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex-1">
-                    {isEditing ? (
-                        <Input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="text-lg font-semibold h-8 border-0 p-0 focus-visible:ring-0"
-                            placeholder="Enter study guide title..."
-                        />
-                    ) : (
-                        <h3 className="text-lg font-semibold">{title || "Untitled Study Guide"}</h3>
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                        {guide ? `Last modified: ${lastSaved}` : "Create your study guide"}
-                        {!isConnected && (
-                            <span className="ml-2 text-xs text-orange-600">(Offline)</span>
-                        )}
-                    </p>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                    {isEditing ? (
-                        <>
+        <div className="h-[calc(100vh-4rem)] relative flex flex-col">
+            {/* Study Button at Top */}
+            <div className="absolute top-4 right-4 z-10">
                             <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={handleCancel}
-                                disabled={isSaving}
-                            >
-                                Cancel
+                    className="bg-background/95 backdrop-blur shadow-sm"
+                    onClick={() => setIsStudyMode(true)}
+                    disabled={!guide?.content}
+                >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Study
                             </Button>
-                            <Button
-                                size="sm"
-                                className="gradient-primary"
-                                onClick={handleSave}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        Saving...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="h-4 w-4 mr-2" />
-                                        Save
-                                    </>
-                                )}
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={handleExport}
-                                        >
-                                            <Download className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Export as JSON</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={handleShare}
-                                        >
-                                            <Share2 className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Share study guide</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <Button
-                                size="sm"
-                                className="gradient-primary"
-                                onClick={handleEdit}
-                            >
-                                <Edit3 className="h-4 w-4 mr-2" />
-                                Edit
-                            </Button>
-                        </>
-                    )}
-                </div>
             </div>
 
-            {/* Editor Toolbar */}
-            {isEditing && (
-                <Card className="shadow-soft">
-                    <CardContent className="p-3">
-                        <div className="flex items-center space-x-1">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => {
-                                                // Implement bold formatting
-                                            }}
-                                        >
-                                            <Bold className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Bold (Ctrl+B)</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => {
-                                                // Implement italic formatting
-                                            }}
-                                        >
-                                            <Italic className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Italic (Ctrl+I)</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <Separator orientation="vertical" className="h-6" />
-                            
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => {
-                                                // Implement list formatting
-                                            }}
-                                        >
-                                            <ListIcon className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Bullet List</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => {
-                                                // Implement numbered list
-                                            }}
-                                        >
-                                            <ListOrdered className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Numbered List</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <Separator orientation="vertical" className="h-6" />
-                            
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => {
-                                                // Implement quote block
-                                            }}
-                                        >
-                                            <QuoteIcon className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Quote Block</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => {
-                                                // Implement code block
-                                            }}
-                                        >
-                                            <Code className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Code Block</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <Separator orientation="vertical" className="h-6" />
-                            
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => {
-                                                // Implement link
-                                            }}
-                                        >
-                                            <Link className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Add Link</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                            onClick={() => {
-                                                // Implement image upload
-                                            }}
-                                        >
-                                            <Image className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Add Image</TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Editor */}
-            <Card className="shadow-soft">
-                <CardContent className="p-6">
+            {/* Editor - Full Height */}
+            <div className="h-full overflow-y-auto">
                     <div
                         id="editorjs-container"
-                        className={`editorjs-container ${
-                            !isEditing ? "pointer-events-none" : ""
-                        }`}
+                    className="h-full editorjs-container"
                     ></div>
-                </CardContent>
-            </Card>
-
-            {/* Status Bar */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <div className="flex items-center space-x-4">
-                    {/* <span>Words: {guide?.content ? JSON.parse(guide.content).blocks.length : 0}</span> */}
-                    <span>Last saved: {lastSaved}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                    {isEditing && (
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                            Editing
-                        </Badge>
-                    )}
-                    {guide && (
-                        <Badge variant="outline">
-                            Auto-save enabled
-                        </Badge>
-                    )}
-                </div>
             </div>
         </div>
     );

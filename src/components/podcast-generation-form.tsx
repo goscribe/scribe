@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +12,7 @@ import { Loader2, Mic, Volume2, Lightbulb } from "lucide-react";
 
 export interface PodcastGenerationForm {
   title: string;
-  content?: string;
+  description?: string;
   userPrompt: string;
   voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
   speed: number;
@@ -49,7 +48,7 @@ const PROMPT_EXAMPLES = [
 export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValues }: PodcastGenerationFormProps) {
   const [formData, setFormData] = useState<PodcastGenerationForm>({
     title: defaultValues?.title || '',
-    content: defaultValues?.content || '',
+    description: defaultValues?.description || '',
     userPrompt: defaultValues?.userPrompt || '',
     voice: defaultValues?.voice || 'nova',
     speed: defaultValues?.speed || 1.0,
@@ -101,15 +100,7 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mic className="h-5 w-5" />
-          Generate New Podcast
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">
@@ -130,12 +121,12 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="content">Content (Optional)</Label>
+            <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
-              id="content"
-              value={formData.content}
-              onChange={(e) => updateField('content', e.target.value)}
-              placeholder="Brief content of the podcast..."
+              id="description"
+              value={formData.description}
+              onChange={(e) => updateField('description', e.target.value)}
+              placeholder="Brief description of the podcast..."
               rows={3}
               disabled={isLoading}
             />
@@ -311,8 +302,6 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
               </>
             )}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+    </form>
   );
 }
