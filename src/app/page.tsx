@@ -3,6 +3,7 @@
 import { useSession } from "@/lib/useSession";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import LandingPage from "./landing/page";
 
 export default function Home() {
   const { data: session, isLoading, error } = useSession();
@@ -13,9 +14,7 @@ export default function Home() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/dashboard");
-    } else if (status === "unauthenticated") {
-      router.push("/login");
+      router.push("/storage");
     }
   }, [status, router]);
 
@@ -25,6 +24,11 @@ export default function Home() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // Show landing page for unauthenticated users
+  if (status === "unauthenticated") {
+    return <LandingPage />;
   }
 
   return null;

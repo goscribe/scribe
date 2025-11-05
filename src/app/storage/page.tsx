@@ -17,6 +17,7 @@ import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { DashboardSearch } from "@/components/dashboard/dashboard-search";
 import { DashboardFoldersSection } from "@/components/dashboard/dashboard-folders-section";
 import { DashboardFilesSection } from "@/components/dashboard/dashboard-files-section";
+import { formatBytes } from "@/lib/audio-validation";
 
 interface FileItem {
   id: string;
@@ -54,12 +55,15 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [editingFolder, setEditingFolder] = useState<{ id: string; name: string } | null>(null);
+  const [newFolderColor, setNewFolderColor] = useState("#6366f1");
+  const [editingFolder, setEditingFolder] = useState<{ id: string; name: string; color?: string } | null>(null);
   const [deletingFolder, setDeletingFolder] = useState<{ id: string; name: string } | null>(null);
   
   const { data: session, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
+
+  const { data: workspaceStats, isLoading: workspaceStatsLoading, error: workspaceStatsError } = trpc.workspace.getStats.useQuery();
   // Fetch workspace data from TRPC
   const { data: workspaces, isLoading: workspacesLoading, error: workspacesError } = trpc.workspace.list.useQuery({});
   
@@ -70,6 +74,7 @@ export default function DashboardPage() {
       utils.workspace.list.invalidate();
       setShowCreateDialog(false);
       setNewFolderName("");
+      setNewFolderColor("#6366f1"); // Reset to default color
     },
   });
   
@@ -92,7 +97,7 @@ export default function DashboardPage() {
    * @param folderId - The ID of the folder to navigate to
    */
   const handleFolderClick = (folderId: string) => {
-    router.push(`/dashboard/workspaces/${folderId}`);
+    router.push(`/storage/workspaces/${folderId}`);
   };
 
   /**
@@ -109,7 +114,10 @@ export default function DashboardPage() {
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
       if (createFolderMutation) {
-        createFolderMutation.mutate({ name: newFolderName.trim() });
+        createFolderMutation.mutate({ 
+          name: newFolderName.trim(),
+          color: newFolderColor 
+        });
       }
     }
   };
@@ -120,7 +128,12 @@ export default function DashboardPage() {
    * @param folderName - The current name of the folder
    */
   const handleRenameFolder = (folderId: string, folderName: string) => {
-    setEditingFolder({ id: folderId, name: folderName });
+    const folder = folders.find(f => f.id === folderId);
+    setEditingFolder({ 
+      id: folderId, 
+      name: folderName, 
+      color: folder?.color || "#6366f1" 
+    });
   };
   
   /**
@@ -131,7 +144,8 @@ export default function DashboardPage() {
       if (updateFolderMutation) {
         updateFolderMutation.mutate({ 
           id: editingFolder.id, 
-          name: editingFolder.name.trim() 
+          name: editingFolder.name.trim(),
+          color: editingFolder.color 
         });
       }
     }
@@ -185,7 +199,7 @@ export default function DashboardPage() {
     file.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (sessionLoading || workspacesLoading) {
+  if (sessionLoading || workspacesLoading || workspaceStatsLoading) {
     return (
       <div className="container mx-auto px-6 py-8 max-w-7xl">
         <div className="animate-pulse space-y-8">
@@ -221,23 +235,23 @@ export default function DashboardPage() {
   const statsData = [
     {
       label: "Total Files",
-      value: files.length,
+      value: workspaceStats?.workspaces || 0,
       icon: FileText,
     },
     {
       label: "Folders",
-      value: folders.length,
+      value: workspaceStats?.folders || 0,
       icon: FolderClosed,
     },
     {
       label: "Storage",
-      value: "2.4 GB",
+      value: workspaceStats?.spaceUsed ? formatBytes(workspaceStats.spaceUsed) : "Unknown",
       icon: BarChart3,
-      extra: <Progress value={65} className="h-1.5 mt-2" />,
+      extra: <div className="flex flex-col gap-2"><Progress value={workspaceStats?.spaceUsed ? (workspaceStats.spaceUsed / (workspaceStats.spaceUsed + workspaceStats.spaceLeft)) * 100 : 0} className="h-1.5 mt-2" /> <span className="text-xs text-muted-foreground">{workspaceStats?.spaceUsed ? formatBytes(workspaceStats.spaceUsed) + " / " + formatBytes(workspaceStats.spaceLeft) : "Unknown"}</span></div>,
     },
     {
       label: "Updated",
-      value: "Today",
+      value: workspaceStats?.lastUpdated ? new Date(workspaceStats.lastUpdated).toLocaleDateString() : "Unknown",
       icon: Calendar,
     },
   ];
@@ -266,6 +280,8 @@ export default function DashboardPage() {
         onToggleCreateDialog={setShowCreateDialog}
         newFolderName={newFolderName}
         onNewFolderNameChange={setNewFolderName}
+        newFolderColor={newFolderColor}
+        onNewFolderColorChange={setNewFolderColor}
         onCreateFolder={handleCreateFolder}
         onFolderClick={handleFolderClick}
         onRenameFolder={handleRenameFolder}

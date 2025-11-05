@@ -58,17 +58,65 @@ export const FlashcardTable = ({
   const columns: ColumnDef<Flashcard>[] = [
     {
       accessorKey: "front",
-      header: "Term",
+      header: "Question",
       cell: ({ row }) => (
-        <div className="font-medium text-sm max-w-md truncate">{row.original.front}</div>
+        <div className="text-sm max-w-md truncate">{row.original.front}</div>
       ),
     },
     {
       accessorKey: "back",
-      header: "Definition",
+      header: "Answer",
       cell: ({ row }) => (
-        <div className="text-sm text-muted-foreground max-w-md truncate">{row.original.back}</div>
+        <div className="text-sm text-muted-foreground/80 max-w-md truncate">{row.original.back}</div>
       ),
+    },
+    {
+      accessorKey: "progress",
+      header: "Progress",
+      cell: ({ row }) => {
+        // Get progress data from the first element of progress array
+        const progress = row.original.progress?.[0];
+        const masteryLevel = progress?.masteryLevel || 0;
+        const timesStudied = progress?.timesStudied || 0;
+        const consecutiveIncorrect = progress?.timesIncorrectConsecutive || 0;
+        
+        return (
+          <div className="flex items-center gap-2.5">
+            {/* Mastery Level Dots */}
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((level) => (
+                <div
+                  key={level}
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full transition-all",
+                    level <= masteryLevel
+                      ? masteryLevel >= 4
+                        ? "bg-green-500"
+                        : masteryLevel >= 2
+                        ? "bg-yellow-500"
+                        : "bg-orange-500"
+                      : "bg-muted-foreground/20"
+                  )}
+                />
+              ))}
+            </div>
+            
+            {/* Study Count */}
+            {timesStudied > 0 && (
+              <span className="text-[10px] text-muted-foreground/60">
+                {timesStudied}x
+              </span>
+            )}
+            
+            {/* Warning for consecutive incorrect */}
+            {consecutiveIncorrect >= 2 && (
+              <span className="text-[10px] text-orange-500/70">
+                ⚠
+              </span>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -95,7 +143,7 @@ export const FlashcardTable = ({
     <>
       {/* No results state */}
       {filteredRows.length === 0 && globalFilter ? (
-        <Card className="border-border">
+        <Card className="border border-border">
           <CardContent className="p-0">
             <EmptyState
               icon={Search}
@@ -105,16 +153,16 @@ export const FlashcardTable = ({
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-border overflow-hidden">
+        <div className="border border-border/50 rounded-lg overflow-hidden">
           <div className="overflow-auto">
             <table className="w-full">
-              <thead className="bg-background border-b border-border sticky top-0">
+              <thead className="border-b border-border/50">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        className="text-left text-xs font-semibold text-muted-foreground px-4 py-3"
+                        className="text-left text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider px-6 py-3 bg-muted/30"
                       >
                         {header.isPlaceholder
                           ? null
@@ -133,12 +181,14 @@ export const FlashcardTable = ({
                     key={row.id}
                     onClick={() => onCardSelect(row.original)}
                     className={cn(
-                      "cursor-pointer transition-colors border-b border-border group",
-                      selectedCard?.id === row.original.id ? "bg-muted" : "hover:bg-muted/50"
+                      "cursor-pointer transition-colors duration-150 border-b border-border/30",
+                      selectedCard?.id === row.original.id 
+                        ? "bg-primary/5" 
+                        : "hover:bg-muted/30"
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-3">
+                      <td key={cell.id} className="px-6 py-3.5">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
@@ -150,8 +200,8 @@ export const FlashcardTable = ({
 
           {/* Pagination Controls */}
           {table.getPageCount() > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
-              <div className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between px-6 py-3 border-t border-border/50 bg-muted/20">
+              <div className="text-xs text-muted-foreground">
                 Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
                 {Math.min(
                   (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
@@ -159,32 +209,32 @@ export const FlashcardTable = ({
                 )}{" "}
                 of {filteredRows.length} cards
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  className="h-7"
+                  className="h-7 hover:bg-muted/50"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
-                <div className="text-sm text-muted-foreground px-2">
+                <span className="text-xs text-muted-foreground px-3">
                   Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                </div>
+                </span>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  className="h-7"
+                  className="h-7 hover:bg-muted/50"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
           )}
-        </Card>
+        </div>
       )}
     </>
   );

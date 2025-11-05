@@ -6,7 +6,10 @@ export function useSession() {
   return useQuery({
     queryKey: ["session"],
     queryFn: fetchSession,
-    staleTime: 1000 * 60, // 1 min
-    retry: false,         // don't hammer if logged out
+    staleTime: 1000 * 60 * 5, // 5 minutes - don't refetch too often
+    gcTime: 1000 * 60 * 10,    // Keep in cache for 10 minutes (formerly cacheTime)
+    retry: false,               // don't hammer if logged out
+    refetchOnWindowFocus: false, // Don't refetch on tab focus
+    refetchOnMount: false,      // Use cache if available
   });
 }

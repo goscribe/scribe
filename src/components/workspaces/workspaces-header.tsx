@@ -38,8 +38,8 @@ export const WorkspacesHeader = ({ folderInfo, onBackClick }: WorkspacesHeaderPr
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
-                Dashboard
+              <BreadcrumbLink href="/storage" className="text-sm text-muted-foreground hover:text-foreground">
+                Storage
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />

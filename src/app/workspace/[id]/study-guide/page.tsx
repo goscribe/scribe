@@ -36,10 +36,11 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import EditorJSMarkdownConverter from '@vingeray/editorjs-markdown-converter';
 import { usePusherStudyGuide } from "@/hooks/pusher/use-pusher-study-guide";
-import { StudyMode } from "@/components/study-guide/study-mode";
+import { useRouter } from "next/navigation";
 
 export default function StudyGuidePanel() {
     const params = useParams();
+    const router = useRouter();
     const workspaceId = params.id as string;
     
     // Pusher integration
@@ -71,7 +72,6 @@ export default function StudyGuidePanel() {
     const [title, setTitle] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<string>("");
-    const [isStudyMode, setIsStudyMode] = useState(false);
 
     const editorRef = useRef<EditorJS | null>(null);
 
@@ -274,16 +274,6 @@ export default function StudyGuidePanel() {
         );
     }
 
-    // Render study mode
-    if (isStudyMode && guide?.content) {
-        return (
-            <StudyMode 
-                content={guide.content}
-                onExit={() => setIsStudyMode(false)}
-            />
-        );
-    }
-
     return (
         <div className="h-[calc(100vh-4rem)] relative flex flex-col">
             {/* Study Button at Top */}
@@ -292,7 +282,7 @@ export default function StudyGuidePanel() {
                                 size="sm"
                                 variant="outline"
                     className="bg-background/95 backdrop-blur shadow-sm"
-                    onClick={() => setIsStudyMode(true)}
+                    onClick={() => router.push(`/workspace/${workspaceId}/study-guide/study`)}
                     disabled={!guide?.content}
                 >
                     <BookOpen className="h-4 w-4 mr-2" />

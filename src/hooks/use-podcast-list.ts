@@ -8,6 +8,7 @@ import { trpc } from '@/lib/trpc';
 import { RouterOutputs } from '@goscribe/server';
 import { usePusherPodcast } from './pusher/use-pusher-podcast';
 import { Progress } from '@/components/ui/progress';
+import { RouterInputs } from '@goscribe/server';
 
 type PodcastEpisode = RouterOutputs['podcast']['listEpisodes'][number];
 
@@ -54,11 +55,22 @@ export const usePodcastList = ({
     refetch 
   } = trpc.podcast.listEpisodes.useQuery({ workspaceId });
 
-  const generatePodcastMutation = trpc.podcast.generateEpisode.useMutation();
+  const generatePodcastMutation = trpc.podcast.generateEpisode.useMutation({
+    onSuccess: () => {
+      refetchPodcasts();
+      setIsGenerating(false);
+      toast.success("Podcast generated successfully!");
+    },
+    onError: (error) => {
+      console.error("Failed to generate podcast:", error);
+      toast.error("Failed to generate podcast");
+    },
+  });
   const deletePodcastMutation = trpc.podcast.deleteEpisode.useMutation();
 
   // Real-time podcast events
-  const { state: pusherState } = usePusherPodcast(workspaceId);
+  // Pass refetch callback to pusher hook for automatic refetching
+  const { state: pusherState } = usePusherPodcast(workspaceId, () => refetch());
 
   /**
    * Refetch podcast list with error handling
@@ -72,48 +84,29 @@ export const usePodcastList = ({
   }, [refetch]);
 
   /**
-   * Handle real-time podcast events and refetch data
+   * Handle real-time podcast events
+   * Refetching is now handled directly in the pusher hook
    */
   useEffect(() => {
     if (!enableRealtime || !pusherState) return;
 
-    const { isGenerating: generating, progress, errors } = pusherState;
+    const { latestPodcastInfo, lastCompleted, lastError } = pusherState;
 
-    // Handle generation state changes
-    if (generating !== isGenerating) {
-      setIsGenerating(generating);
+    // Log state changes for debugging
+    if (latestPodcastInfo) {
+      console.log('Podcast info updated:', latestPodcastInfo);
     }
-
-    // Handle generation progress with detailed toast
-    if (generating) {
-      if (progress.errors && progress.errors.length > 0) {
-        toast.error(progress.errors[0] || 'An error occurred during generation', { id: 'podcast-gen' });
-        toast.dismiss('podcast-gen-progress');
-        setIsGenerating(false);
-        return;
-      }
-
-      if (progress.stage === 'complete') {
-        toast.success('Podcast generated successfully!', { id: 'podcast-gen' });
-        toast.dismiss('podcast-gen-progress');
-        setIsGenerating(false);
-        // Refetch the list to show the new podcast
-        refetchPodcasts();
-        return;
-      }
-    } else if (!generating && isGenerating) {
-      setIsGenerating(false);
-      toast.dismiss('podcast-gen');
-      toast.dismiss('podcast-gen-progress');
-    }
-
-    // Handle errors
-    if (errors && errors.length > 0) {
-      const latestError = errors[errors.length - 1];
-      toast.error(latestError || 'An error occurred during generation');
+    
+    if (lastCompleted) {
+      console.log('Podcast completed:', lastCompleted);
       setIsGenerating(false);
     }
-  }, [pusherState, enableRealtime, isGenerating, refetchPodcasts]);
+    
+    if (lastError) {
+      console.log('Podcast error:', lastError);
+      setIsGenerating(false);
+    }
+  }, [pusherState, enableRealtime]);
 
   /**
    * Filters and sorts podcast episodes based on search query and sort option
@@ -158,24 +151,19 @@ export const usePodcastList = ({
   /**
    * Generates a new podcast episode
    */
-  const generatePodcast = async (formData: Record<string, unknown>) => {
+  const generatePodcast = async (formData: RouterInputs['podcast']['generateEpisode']['podcastData']) => {
     try {
       setIsGenerating(true);
 
-      const result = await generatePodcastMutation.mutateAsync({
+      const result = generatePodcastMutation.mutateAsync({
         workspaceId,
-        podcastData: formData
+        podcastData: { ...formData }
       });
 
       
       // Refetch the list to show the new podcast
       await refetchPodcasts();
-      
-      // Navigate to the new podcast after a short delay
-      setTimeout(() => {
-        router.push(`/workspace/${workspaceId}/podcasts/${result.id}`);
-      }, 2000);
-
+    
       return result;
     } catch (error) {
       console.error("Failed to generate podcast:", error);

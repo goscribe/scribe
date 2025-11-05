@@ -3,7 +3,9 @@
 import { Plus, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +53,10 @@ interface DashboardFoldersSectionProps {
   newFolderName: string;
   /** Callback when new folder name changes */
   onNewFolderNameChange: (name: string) => void;
+  /** New folder color */
+  newFolderColor: string;
+  /** Callback when new folder color changes */
+  onNewFolderColorChange: (color: string) => void;
   /** Callback when create folder is clicked */
   onCreateFolder: () => void;
   /** Callback when folder is clicked */
@@ -60,9 +66,9 @@ interface DashboardFoldersSectionProps {
   /** Callback when folder delete is requested */
   onDeleteFolder: (folderId: string, folderName: string) => void;
   /** Currently editing folder */
-  editingFolder: { id: string; name: string } | null;
+  editingFolder: { id: string; name: string; color?: string } | null;
   /** Callback when editing folder changes */
-  onEditingFolderChange: (folder: { id: string; name: string } | null) => void;
+  onEditingFolderChange: (folder: { id: string; name: string; color?: string } | null) => void;
   /** Callback when save rename is clicked */
   onSaveRename: () => void;
   /** Currently deleting folder */
@@ -93,6 +99,8 @@ export const DashboardFoldersSection = ({
   onToggleCreateDialog,
   newFolderName,
   onNewFolderNameChange,
+  newFolderColor,
+  onNewFolderColorChange,
   onCreateFolder,
   onFolderClick,
   onRenameFolder,
@@ -119,16 +127,33 @@ export const DashboardFoldersSection = ({
             <DialogHeader>
               <DialogTitle>Create New Folder</DialogTitle>
               <DialogDescription>
-                Enter a name for your new folder to organize your files.
+                Enter a name and choose a color for your new folder.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <Input
-                placeholder="Folder name"
-                value={newFolderName}
-                onChange={(e) => onNewFolderNameChange(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onCreateFolder()}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="folder-name">Folder Name</Label>
+                <Input
+                  id="folder-name"
+                  placeholder="Enter folder name"
+                  value={newFolderName}
+                  onChange={(e) => onNewFolderNameChange(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && newFolderName.trim() && onCreateFolder()}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="folder-color">Folder Color</Label>
+                <div className="flex items-center gap-2">
+                  <ColorPicker
+                    value={newFolderColor}
+                    onChange={onNewFolderColorChange}
+                    showLabel={true}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    Choose a color to identify your folder
+                  </span>
+                </div>
+              </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => onToggleCreateDialog(false)}>
                   Cancel
@@ -187,24 +212,41 @@ export const DashboardFoldersSection = ({
       <Dialog open={!!editingFolder} onOpenChange={(open) => !open && onEditingFolderChange(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename Folder</DialogTitle>
+            <DialogTitle>Edit Folder</DialogTitle>
             <DialogDescription>
-              Enter a new name for your folder.
+              Update the name and color for your folder.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Input
-              placeholder="Folder name"
-              value={editingFolder?.name || ""}
-              onChange={(e) => onEditingFolderChange(editingFolder ? { ...editingFolder, name: e.target.value } : null)}
-              onKeyDown={(e) => e.key === "Enter" && onSaveRename()}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="edit-folder-name">Folder Name</Label>
+              <Input
+                id="edit-folder-name"
+                placeholder="Enter folder name"
+                value={editingFolder?.name || ""}
+                onChange={(e) => onEditingFolderChange(editingFolder ? { ...editingFolder, name: e.target.value } : null)}
+                onKeyDown={(e) => e.key === "Enter" && editingFolder?.name.trim() && onSaveRename()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-folder-color">Folder Color</Label>
+              <div className="flex items-center gap-2">
+                <ColorPicker
+                  value={editingFolder?.color || "#6366f1"}
+                  onChange={(color) => onEditingFolderChange(editingFolder ? { ...editingFolder, color } : null)}
+                  showLabel={true}
+                />
+                <span className="text-sm text-muted-foreground">
+                  Update the folder color
+                </span>
+              </div>
+            </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => onEditingFolderChange(null)}>
                 Cancel
               </Button>
               <Button onClick={onSaveRename} disabled={!editingFolder?.name.trim()}>
-                Rename
+                Save Changes
               </Button>
             </div>
           </div>

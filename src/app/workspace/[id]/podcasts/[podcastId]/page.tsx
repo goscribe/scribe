@@ -1,59 +1,88 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { PodcastHeader } from "@/components/podcast/podcast-header";
-import { PodcastPlayer } from "@/components/podcast/podcast-player";
-import { SegmentList } from "@/components/podcast/segment-list";
-import { PodcastSidebar } from "@/components/podcast/podcast-sidebar";
+import { ArrowLeft, Play, Pause, Clock, Calendar, Mic2, Zap, Download, Share2, MoreVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { PodcastRenameDialog } from "@/components/podcast/podcast-rename-dialog";
 import { SegmentRegenerateDialog } from "@/components/podcast/segment-regenerate-dialog";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { usePodcast } from "@/hooks/use-podcast";
+import { useRouter } from "next/navigation";
 
 /**
- * Podcast detail page component for viewing and managing individual podcast episodes
- * 
- * Features:
- * - View podcast information and metadata
- * - Play/pause individual segments
- * - Rename podcast title and description
- * - Regenerate segments with custom prompts
- * - Download segment audio files
- * - Real-time updates via Pusher
- * 
- * @returns JSX element containing the podcast detail page
+ * Redesigned podcast detail page - cleaner, more focused UX
  */
 export default function PodcastDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const workspaceId = params.id as string;
   const podcastId = params.podcastId as string;
 
-  // Custom hook for podcast operations
   const {
     episode,
     sortedSegments,
     isLoading,
     error,
-    isBookmarked,
     playingSegment,
+    currentTime,
     isRenameDialogOpen,
     isRegenerateDialogOpen,
     selectedSegment,
     isRenaming,
     isRegenerating,
-    setIsBookmarked,
     setIsRenameDialogOpen,
     setIsRegenerateDialogOpen,
     setSelectedSegment,
     handleSegmentPlayPause,
     handleRenamePodcast,
     handleSegmentRegenerate,
-    handleEditSegment,
     handleDownloadSegment,
-    handleDeleteSegment,
     handleDeleteEpisode,
-    refreshEpisode,
   } = usePodcast(workspaceId, podcastId);
+
+  // Helper functions
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  const formatDurationLong = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
+  const getCurrentSegmentTime = () => {
+    if (!currentSegment) return 0;
+    // Time elapsed within the current segment
+    return Math.max(0, currentTime - currentSegment.startTime);
+  };
+
+  const calculateProgress = () => {
+    if (!currentSegment || currentSegment.duration === 0) return 0;
+    
+    // Calculate progress within current segment
+    const segmentTime = getCurrentSegmentTime();
+    const segmentProgress = (segmentTime / currentSegment.duration) * 100;
+    return Math.min(100, Math.max(0, segmentProgress));
+  };
+  
+  const calculateOverallProgress = () => {
+    if (totalDuration === 0) return 0;
+    return Math.min(100, Math.max(0, (currentTime / totalDuration) * 100));
+  };
 
   // Loading state
   if (isLoading) {
@@ -63,72 +92,407 @@ export default function PodcastDetailPage() {
   // Error state
   if (error || !episode) {
     return (
-      <div className="space-y-4">
-        <div className="text-center py-8">
-          <h3 className="text-lg font-semibold text-destructive mb-2">Error Loading Podcast</h3>
-          <p className="text-muted-foreground mb-4">
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md">
+          <CardContent className="p-8 text-center space-y-4">
+            <div className="text-destructive text-lg font-medium">
             {error?.message || 'Podcast not found'}
-          </p>
-          <button onClick={() => window.location.reload()}>Try Again</button>
         </div>
+            <Button onClick={() => router.push(`/workspace/${workspaceId}/podcasts`)}>
+              Back to Podcasts
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  const currentSegment = playingSegment !== null ? sortedSegments[playingSegment] : null;
+  const totalDuration = episode.metadata?.totalDuration || 0;
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <PodcastHeader
-        title={episode.title}
-        isBookmarked={isBookmarked}
-        onToggleBookmark={() => setIsBookmarked(!isBookmarked)}
-        onRefresh={refreshEpisode}
-        onRename={() => setIsRenameDialogOpen(true)}
-        onDelete={handleDeleteEpisode}
-      />
+    <div className="h-full flex flex-col">
+      {/* Top Bar - Minimal & Clean */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">{episode.title}</h1>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatDurationLong(totalDuration)}
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {new Date(episode.createdAt).toLocaleDateString()}
+              </div>
+              <span>•</span>
+              <Badge variant="secondary" className="text-xs">
+                {sortedSegments.length} segments
+              </Badge>
+            </div>
+          </div>
+        </div>
 
-      {/* Audio Player */}
-      <PodcastPlayer
-        title={episode.title}
-        description={episode.description}
-        duration={episode.metadata?.totalDuration || 0}
-        speed={episode.metadata?.speed || 1.0}
-        voice={episode.metadata?.voice || 'Unknown'}
-        onPlay={() => {
-          if (sortedSegments.length > 0) {
-            handleSegmentPlayPause(0);
-          }
-        }}
-      />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsRenameDialogOpen(true)}>
+              Edit Details
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Download className="h-4 w-4 mr-2" />
+              Download All
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={handleDeleteEpisode}
+            >
+              Delete Podcast
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Main Content */}
+      {/* Main Content - Split View */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Player & Current Segment */}
         <div className="lg:col-span-2 space-y-4">
-          <SegmentList
-            segments={sortedSegments}
-            playingSegment={playingSegment}
-            onSegmentPlayPause={handleSegmentPlayPause}
-            onEditSegment={handleEditSegment}
-            onRegenerateSegment={(segment) => {
+          {/* Now Playing Card */}
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <CardContent className="p-6">
+              {currentSegment ? (
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="secondary" className="text-xs">
+                          Segment {playingSegment! + 1} of {sortedSegments.length}
+                        </Badge>
+                        <Badge className="text-xs bg-primary/20 text-primary border-0 animate-pulse">
+                          Now Playing
+                        </Badge>
+                      </div>
+                      <h2 className="text-xl font-bold mb-2">{currentSegment.title}</h2>
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {currentSegment.content}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => handleSegmentPlayPause(playingSegment!)}
+                      size="lg"
+                      className="rounded-full h-12 w-12 p-0 ml-4"
+                    >
+                      <Pause className="h-5 w-5" />
+                    </Button>
+                  </div>
+
+                  {/* Segment Progress Bar */}
+                  <div className="space-y-2">
+                    <Progress value={calculateProgress()} className="h-1" />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{formatDuration(getCurrentSegmentTime())}</span>
+                      <span>{formatDuration(currentSegment.duration)}</span>
+                    </div>
+                  </div>
+
+                  {/* Key Points */}
+                  {currentSegment.keyPoints && currentSegment.keyPoints.length > 0 && (
+                    <div className="pt-4 border-t">
+                      <p className="text-xs font-medium mb-2">Key Points:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {currentSegment.keyPoints.map((point, i) => (
+                          <Badge key={i} variant="outline" className="text-xs font-normal">
+                            {point}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Play className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">Ready to Listen</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Select a segment below to start playing
+                  </p>
+                  {sortedSegments.length > 0 && (
+                    <Button
+                      onClick={() => handleSegmentPlayPause(0)}
+                      className="gap-2"
+                    >
+                      <Play className="h-4 w-4" />
+                      Play from Start
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Overall Episode Progress */}
+          {/* {playingSegment !== null && (
+            <Card className="border-primary/20">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Overall Progress</span>
+                    <span className="text-muted-foreground">
+                      Segment {playingSegment + 1} of {sortedSegments.length} • {Math.round(calculateOverallProgress())}%
+                    </span>
+                  </div>
+                  <Progress value={calculateOverallProgress()} className="h-2" />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{formatDuration(currentTime)}</span>
+                    <span>{formatDuration(totalDuration)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )} */}
+
+          {/* Segments List - Cleaner Design */}
+          <Card>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[500px]">
+                <div className="p-4 space-y-2">
+                  {sortedSegments.map((segment, index) => (
+                    <div
+                      key={segment.id}
+                      className={`
+                        group relative p-4 rounded-lg border transition-all cursor-pointer
+                        ${playingSegment === index 
+                          ? 'border-primary bg-primary/5 shadow-sm' 
+                          : 'border-transparent hover:border-border hover:bg-muted/50'}
+                      `}
+                      onClick={() => handleSegmentPlayPause(index)}
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Play Button */}
+                        <Button
+                          variant={playingSegment === index ? "default" : "outline"}
+                          size="sm"
+                          className="h-10 w-10 rounded-full p-0 flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSegmentPlayPause(index);
+                          }}
+                        >
+                          {playingSegment === index ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <h3 className="font-medium truncate">{segment.title}</h3>
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                            {segment.content}
+                          </p>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>{formatDuration(segment.duration)}</span>
+                            {segment.keyPoints && segment.keyPoints.length > 0 && (
+                              <>
+                                <span>•</span>
+                                <span>{segment.keyPoints.length} key points</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions - Show on Hover */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
               setSelectedSegment(segment);
               setIsRegenerateDialogOpen(true);
             }}
-            onDownloadSegment={handleDownloadSegment}
-            onDeleteSegment={handleDeleteSegment}
-            isProcessing={isRegenerating}
-          />
+                            >
+                              <Zap className="h-4 w-4 mr-2" />
+                              Regenerate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadSegment(segment);
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Sidebar */}
-        <PodcastSidebar
-          episode={episode}
-          playingSegment={playingSegment}
-          onEdit={() => setIsRenameDialogOpen(true)}
-          onDelete={handleDeleteEpisode}
-        />
+        {/* Right: Episode Info & Insights */}
+        <div className="space-y-4">
+          {/* Quick Stats */}
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <h3 className="font-semibold mb-4">Episode Details</h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Duration</p>
+                    <p className="font-medium">{formatDurationLong(totalDuration)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                    <Mic2 className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Voice</p>
+                    <p className="font-medium capitalize">{episode.metadata?.voice || 'Nova'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
+                    <Zap className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Speed</p>
+                    <p className="font-medium">{episode.metadata?.speed || 1.0}x</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Episode Summary */}
+          {episode.metadata?.summary && (
+            <Card>
+              <CardContent className="p-6">
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="details">Details</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="overview" className="space-y-4 mt-4">
+                    {/* Executive Summary */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2">Summary</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {episode.metadata.summary.executiveSummary}
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    {/* Learning Objectives */}
+                    {episode.metadata.summary.learningObjectives?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-2">You'll Learn</h4>
+                        <ul className="space-y-2">
+                          {episode.metadata.summary.learningObjectives.slice(0, 3).map((obj, i) => (
+                            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <span className="text-primary mt-1">✓</span>
+                              <span>{obj}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="details" className="space-y-4 mt-4">
+                    {/* Key Concepts */}
+                    {episode.metadata.summary.keyConcepts?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-2">Key Concepts</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {episode.metadata.summary.keyConcepts.map((concept, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              {concept}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    {/* Tags */}
+                    {episode.metadata.summary.tags?.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-2">Tags</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {episode.metadata.summary.tags.map((tag, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Target Audience */}
+                    {episode.metadata.summary.targetAudience && (
+                      <>
+                        <Separator />
+                        <div>
+                          <h4 className="text-sm font-semibold mb-2">For</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {episode.metadata.summary.targetAudience}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
+        </div>
               </div>
               
-      {/* Rename Dialog */}
+      {/* Dialogs */}
       <PodcastRenameDialog
         isOpen={isRenameDialogOpen}
         onOpenChange={setIsRenameDialogOpen}
@@ -138,7 +502,6 @@ export default function PodcastDetailPage() {
         isRenaming={isRenaming}
       />
 
-      {/* Regenerate Segment Dialog */}
       <SegmentRegenerateDialog
         isOpen={isRegenerateDialogOpen}
         onOpenChange={setIsRegenerateDialogOpen}

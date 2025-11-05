@@ -6,19 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Loader2, Mic, Volume2, Lightbulb } from "lucide-react";
+import { Loader2, Mic, Lightbulb, Plus, X, Users } from "lucide-react";
+import { Card } from "@/components/ui/card";
+
+export type VoiceType = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+
+export interface Speaker {
+  id: string;
+  name: string;
+  voice: VoiceType;
+  role?: string;
+}
 
 export interface PodcastGenerationForm {
   title: string;
   description?: string;
   userPrompt: string;
-  voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
-  speed: number;
-  generateIntro: boolean;
-  generateOutro: boolean;
-  segmentByTopics: boolean;
+  speakers: Speaker[];
 }
 
 interface PodcastGenerationFormProps {
@@ -50,11 +54,10 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
     title: defaultValues?.title || '',
     description: defaultValues?.description || '',
     userPrompt: defaultValues?.userPrompt || '',
-    voice: defaultValues?.voice || 'nova',
-    speed: defaultValues?.speed || 1.0,
-    generateIntro: defaultValues?.generateIntro ?? true,
-    generateOutro: defaultValues?.generateOutro ?? true,
-    segmentByTopics: defaultValues?.segmentByTopics ?? true,
+    speakers: defaultValues?.speakers || [
+      { id: '1', name: 'Host', voice: 'nova', role: 'Main Host' },
+      { id: '2', name: 'Guest', voice: 'alloy', role: 'Expert Guest' }
+    ],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -71,8 +74,8 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
       newErrors.userPrompt = 'User prompt is required';
     }
 
-    if (formData.userPrompt.length < 20) {
-      newErrors.userPrompt = 'User prompt must be at least 20 characters long';
+    if (formData.userPrompt.trim().length < 2) {
+      newErrors.userPrompt = 'User prompt must be at least 2 characters';
     }
 
     setErrors(newErrors);
@@ -97,6 +100,37 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
   const insertExample = (example: string) => {
     setFormData(prev => ({ ...prev, userPrompt: example }));
     setShowExamples(false);
+  };
+
+  const addSpeaker = () => {
+    const newSpeaker: Speaker = {
+      id: Date.now().toString(),
+      name: `Speaker ${formData.speakers.length + 1}`,
+      voice: 'echo',
+      role: ''
+    };
+    setFormData(prev => ({
+      ...prev,
+      speakers: [...prev.speakers, newSpeaker]
+    }));
+  };
+
+  const removeSpeaker = (id: string) => {
+    if (formData.speakers.length > 2) {
+      setFormData(prev => ({
+        ...prev,
+        speakers: prev.speakers.filter(s => s.id !== id)
+      }));
+    }
+  };
+
+  const updateSpeaker = (id: string, field: keyof Speaker, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      speakers: prev.speakers.map(s => 
+        s.id === id ? { ...s, [field]: value } : s
+      )
+    }));
   };
 
   return (
@@ -188,101 +222,103 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
             )}
           </div>
 
-          {/* Voice Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="voice">Voice</Label>
-            <Select
-              value={formData.voice}
-              onValueChange={(value) => updateField('voice', value)}
-              disabled={isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {VOICE_OPTIONS.map((voice) => (
-                  <SelectItem key={voice.value} value={voice.value}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{voice.label}</span>
-                      <span className="text-sm text-muted-foreground">{voice.description}</span>
+          {/* Speakers Configuration */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Speakers ({formData.speakers.length})
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSpeaker}
+                disabled={isLoading || formData.speakers.length >= 6}
+                className="text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Speaker
+              </Button>
+            </div>
+            
+            <div className="space-y-3">
+              {formData.speakers.map((speaker, index) => (
+                <Card key={speaker.id} className="p-4 border border-border/50">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor={`name-${speaker.id}`} className="text-xs">Name</Label>
+                          <Input
+                            id={`name-${speaker.id}`}
+                            value={speaker.name}
+                            onChange={(e) => updateSpeaker(speaker.id, 'name', e.target.value)}
+                            placeholder="Speaker name..."
+                            className="h-8 text-sm"
+                            disabled={isLoading}
+                          />
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <Label htmlFor={`role-${speaker.id}`} className="text-xs">Role (Optional)</Label>
+                          <Input
+                            id={`role-${speaker.id}`}
+                            value={speaker.role || ''}
+                            onChange={(e) => updateSpeaker(speaker.id, 'role', e.target.value)}
+                            placeholder="e.g., Host, Expert, Guest..."
+                            className="h-8 text-sm"
+                            disabled={isLoading}
+                          />
+                        </div>
+                      </div>
+                      
+                      {formData.speakers.length > 2 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSpeaker(speaker.id)}
+                          disabled={isLoading}
+                          className="h-8 w-8 p-0 ml-2"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor={`voice-${speaker.id}`} className="text-xs">Voice</Label>
+                      <Select
+                        value={speaker.voice}
+                        onValueChange={(value) => updateSpeaker(speaker.id, 'voice', value as VoiceType)}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VOICE_OPTIONS.map((voice) => (
+                            <SelectItem key={voice.value} value={voice.value}>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">{voice.label}</span>
+                                <span className="text-xs text-muted-foreground">- {voice.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              Create a conversational podcast with multiple speakers. Each speaker will have their own voice and perspective.
+            </p>
           </div>
 
-          {/* Speed Control */}
-          <div className="space-y-2">
-            <Label htmlFor="speed" className="flex items-center gap-2">
-              <Volume2 className="h-4 w-4" />
-              Speed: {formData.speed}x
-            </Label>
-            <Slider
-              id="speed"
-              min={0.25}
-              max={4.0}
-              step={0.25}
-              value={[formData.speed]}
-              onValueChange={([value]) => updateField('speed', value)}
-              disabled={isLoading}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>0.25x</span>
-              <span>1.0x</span>
-              <span>2.0x</span>
-              <span>4.0x</span>
-            </div>
-          </div>
-
-          {/* Options */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="generateIntro">Generate Introduction</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically create an engaging intro for your podcast
-                </p>
-              </div>
-              <Switch
-                id="generateIntro"
-                checked={formData.generateIntro}
-                onCheckedChange={(checked) => updateField('generateIntro', checked)}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="generateOutro">Generate Conclusion</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically create a conclusion and call-to-action
-                </p>
-              </div>
-              <Switch
-                id="generateOutro"
-                checked={formData.generateOutro}
-                onCheckedChange={(checked) => updateField('generateOutro', checked)}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="segmentByTopics">Segment by Topics</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically break content into logical segments
-                </p>
-              </div>
-              <Switch
-                id="segmentByTopics"
-                checked={formData.segmentByTopics}
-                onCheckedChange={(checked) => updateField('segmentByTopics', checked)}
-                disabled={isLoading}
-              />
-            </div>
-          </div>
 
           {/* Submit Button */}
           <Button

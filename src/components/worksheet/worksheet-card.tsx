@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { RouterOutputs } from "@goscribe/server";
+import { useWorksheet } from "@/hooks/use-worksheet";
 
 type Worksheet = RouterOutputs['worksheets']['get'];
 
@@ -69,10 +70,14 @@ export const WorksheetCard = ({
 }: WorksheetCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
+  const workspaceId = worksheet.workspaceId;
+
+  const { correctAnswers, incorrectAnswers } = useWorksheet(workspaceId, worksheet.id);
+  
   // Check if worksheet is generating (assuming worksheet has a generating field)
   const isGenerating = worksheet.generating === true;
   
-  const completedProblems = worksheet.questions.filter((q: Worksheet['questions'][number]) => q.meta?.completed).length;
+  const completedProblems = correctAnswers?.size || 0;
   const totalProblems = worksheet.questions.length;
   const progressPercentage = totalProblems > 0 
     ? (completedProblems / totalProblems) * 100 
@@ -86,13 +91,13 @@ export const WorksheetCard = ({
   const getDifficultyBadgeClasses = (difficulty: string) => {
     switch (difficulty) {
       case 'EASY':
-        return "bg-green-50 text-green-700 border-green-200";
+        return "bg-green-50 text-green-700 dark:bg-green-500/20 dark:text-green-400 border-green-200 dark:border-green-500/30";
       case 'MEDIUM':
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+        return "bg-yellow-50 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/30";
       case 'HARD':
-        return "bg-red-50 text-red-700 border-red-200";
+        return "bg-red-50 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200 dark:border-red-500/30";
       default:
-        return "bg-muted text-muted-foreground";
+        return "bg-muted text-muted-foreground border-border";
     }
   };
 
@@ -103,15 +108,15 @@ export const WorksheetCard = ({
   // If generating, show generating state
   if (isGenerating && generatingMetadata) {
     return (
-      <Card className="card-hover group border-border border-dashed border-primary/30 bg-primary/5">
-        <CardContent className="p-4">
+      <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
+        <CardContent className="p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0 space-y-2">
               {/* Title and Difficulty */}
               <div className="flex items-start gap-2">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <h3 className="font-medium text-sm text-primary">Generating Worksheet...</h3>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  <h3 className="text-sm font-medium">Generating Worksheet...</h3>
                 </div>
                 <Badge 
                   variant="outline" 
@@ -122,18 +127,18 @@ export const WorksheetCard = ({
               </div>
               
               {/* Description */}
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground/80">
                 Creating {generatingMetadata.quantity} {generatingMetadata.difficulty.toLowerCase()} problems...
               </p>
 
               {/* Metadata */}
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground/70">
                 <div className="flex items-center gap-1">
                   <FileText className="h-3 w-3" />
                   {generatingMetadata.quantity} problems
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-pulse" />
                   Generating...
                 </div>
               </div>
@@ -145,13 +150,13 @@ export const WorksheetCard = ({
   }
 
   return (
-    <Card className="card-hover group border-border">
-      <CardContent className="p-4">
+    <Card className="border border-border shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0 space-y-2">
             {/* Title and Difficulty */}
             <div className="flex items-start gap-2">
-              <h3 className="font-medium text-sm">{worksheet.title}</h3>
+              <h3 className="text-sm font-medium">{worksheet.title}</h3>
               <Badge 
                 variant="outline" 
                 className={cn("text-xs", getDifficultyBadgeClasses(worksheet.difficulty || 'EASY'))}
@@ -162,19 +167,56 @@ export const WorksheetCard = ({
             
             {/* Description */}
             {worksheet.description && (
-              <p className="text-sm text-muted-foreground line-clamp-1">
+              <p className="text-xs text-muted-foreground/80 line-clamp-1">
                 {worksheet.description}
               </p>
             )}
 
             {/* Progress Bar */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{completedProblems}/{totalProblems} completed</span>
-                <span>{Math.round(progressPercentage)}%</span>
+            {totalProblems > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {/* Progress dots */}
+                    <div className="flex gap-1">
+                      {/* {Array.from({ length: Math.min(totalProblems, 10) }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={cn(
+                            "h-2 w-2 rounded-full transition-all",
+                            i < Math.floor((completedProblems / totalProblems) * Math.min(totalProblems, 10))
+                              ? "bg-green-500"
+                              : "bg-muted-foreground/20 border border-border"
+                          )}
+                        />
+                      ))} */}
+
+                      {worksheet.questions.map((question: Worksheet['questions'][number]) => (
+                        <div key={question.id}>
+                          {correctAnswers?.has(question.id) && (
+                            <div className="h-2 w-2 rounded-full bg-green-500" />
+                          )}
+                          {incorrectAnswers?.has(question.id) && (
+                            <div className="h-2 w-2 rounded-full bg-red-500" />
+                          )}
+                          {!correctAnswers?.has(question.id) && !incorrectAnswers?.has(question.id) && (
+                            <div className="h-2 w-2 rounded-full bg-muted-foreground/20 border border-border" />
+                          )}
+                        </div>
+                      ))}
+                      
+                      {totalProblems > 10 && (
+                        <span className="text-[10px] text-muted-foreground ml-1">+{totalProblems - 10}</span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs font-medium">
+                    {completedProblems}/{totalProblems}
+                  </span>
+                </div>
+                <Progress value={progressPercentage} className="h-1.5" />
               </div>
-              <Progress value={progressPercentage} className="h-1.5" />
-            </div>
+            )}
 
             {/* Metadata and Actions */}
             <div className="flex items-center justify-between">
@@ -201,7 +243,7 @@ export const WorksheetCard = ({
                 <Button
                   variant="default"
                   size="sm"
-                  className="h-8"
+                  className="h-7 text-xs px-3"
                   onClick={(e) => {
                     e.stopPropagation();
                     onOpen(worksheet.id);
@@ -212,24 +254,24 @@ export const WorksheetCard = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8"
+                  className="h-7 w-7 p-0 hover:bg-muted/50"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEdit(worksheet.id);
                   }}
                 >
-                  <Edit3 className="h-3.5 w-3.5" />
+                  <Edit3 className="h-3 w-3" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 text-destructive hover:text-destructive"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowDeleteDialog(true);
                   }}
                 >
-                  <Trash className="h-3.5 w-3.5" />
+                  <Trash className="h-3 w-3" />
                 </Button>
               </div>
             </div>

@@ -48,25 +48,31 @@ export const WorkspaceSidebar = ({
 }: WorkspaceSidebarProps) => {
   return (
     <div className={cn(
-      "bg-muted/40 border-r border-border transition-all duration-300 ease-in-out",
-      "h-[calc(100vh-3rem)] overflow-y-auto", // Subtract navbar height and allow scrolling
-      isCollapsed ? "w-16" : "w-64"
+      "bg-background border-r-2 border-border/50 transition-all duration-300 ease-out flex flex-col",
+      "h-[calc(100vh-3rem)]", // Subtract navbar height and add shadow
+      isCollapsed ? "w-[4.5rem]" : "w-72"
     )}>
-      <WorkspaceDropdown isCollapsed={isCollapsed} />
+      <div className="border-b border-border/50 bg-muted/5">
+        <WorkspaceDropdown isCollapsed={isCollapsed} />
+      </div>
       
-      <NavigationTabs 
-        onTabChange={onTabChange}
-        activeTab={activeTab} 
-        isCollapsed={isCollapsed} 
-      />
-      
-      {!isCollapsed && (
-        <FilesSection 
-          files={files} 
-          isUploading={isUploading || false} 
-          onUploadClick={onUploadClick || (() => {})} 
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+        <NavigationTabs 
+          onTabChange={onTabChange}
+          activeTab={activeTab} 
+          isCollapsed={isCollapsed} 
         />
-      )}
+        
+        {!isCollapsed && (
+          <div className="mt-2">
+            <FilesSection 
+              files={files} 
+              isUploading={isUploading || false} 
+              onUploadClick={onUploadClick || (() => {})} 
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -22,6 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { trpc } from "@/lib/trpc";
 import { Textarea } from "./ui/textarea";
 import { useParams, useRouter } from "next/navigation";
@@ -63,6 +64,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
   const [searchQuery, setSearchQuery] = useState("");
   const [fileName, setFileName] = useState("");
   const [folderName, setFolderName] = useState("");
+  const [folderColor, setFolderColor] = useState("#6366f1");
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   const { data: searchResults, isLoading: isSearching, error: searchError } = trpc.workspace.search.useQuery({
@@ -94,9 +96,11 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
       onCreateFolder?.(folderName);
       createFolder.mutate({
         name: folderName,
+        color: folderColor,
         ...(folderId && { parentId: folderId as string }),
       });
       setFolderName("");
+      setFolderColor("#6366f1"); // Reset to default
       setIsNewFolderOpen(false);
     }
   };
@@ -115,12 +119,12 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
   const { folderId } = useParams();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-muted/40 backdrop-blur-sm">
-      <div className="flex h-12 items-center justify-between px-4">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background">
+      <div className="flex h-14 items-center justify-between px-6">
         {/* Logo */}
-        <div className="flex items-center space-x-2 cursor-pointer" onClick={() => router.push("/dashboard")}>
-          <img src="/logo.png" alt="Scribe Logo" className="h-5 w-5" />
-          <span className="text-base font-semibold text-foreground">
+        <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => router.push("/dashboard")}>
+          <img src="/logo.png" alt="Scribe Logo" className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
+          <span className="text-lg font-bold text-foreground">
             scribe
           </span>
         </div>
@@ -130,12 +134,12 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
             <Input
-              placeholder="Search..."
+              placeholder="Search workspaces..."
               value={searchQuery}
               onChange={handleSearchChange}
               onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
               onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-              className="pl-10 h-8 bg-muted/50 border-0 focus-visible:ring-1 transition-colors text-sm"
+              className="pl-10 h-9 bg-muted/30 border border-border/50 focus-visible:ring-1 focus-visible:ring-primary/20 transition-all duration-200 text-sm"
             />
             {/* Loading State */}
             {isSearching && (
@@ -204,8 +208,8 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
               {/* New Dropdown */}
               <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="default" size="sm" className="h-8">
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
+              <Button variant="outline" size="sm" className="h-9 border-border/50 hover:bg-muted/50">
+                <Plus className="h-4 w-4 mr-1.5" />
                 New
               </Button>
             </DropdownMenuTrigger>
@@ -223,13 +227,13 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-7 w-7 rounded-full p-0">
-                    <Avatar className="h-7 w-7">
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 hover:bg-muted/50">
+                    <Avatar className="h-8 w-8">
                       <AvatarImage 
                         src={session?.user?.image || undefined} 
                         alt={getUserDisplayName()} 
                       />
-                      <AvatarFallback className="text-xs border">
+                      <AvatarFallback className="text-xs border border-border/50 bg-muted/20">
                         {getUserInitials(session?.user?.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -285,12 +289,12 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
           ) : (
             <div className="flex items-center space-x-2">
               <Link href="/signup">
-                <Button variant="outline" size="sm" className="h-8">
+                <Button variant="outline" size="sm" className="h-9 border-border/50 hover:bg-muted/50">
                   Sign Up
                 </Button>
               </Link>
               <Link href="/login">
-                <Button size="sm" className="h-8">
+                <Button size="sm" className="h-9 bg-primary/90 hover:bg-primary">
                   Sign In
                 </Button>
               </Link>
@@ -353,6 +357,13 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
                 onChange={(e) => setFolderName(e.target.value)}
                 placeholder="Project Folder"
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Folder Color</Label>
+              <ColorPicker
+                value={folderColor}
+                onChange={setFolderColor}
               />
             </div>
             <div className="flex justify-end space-x-2">

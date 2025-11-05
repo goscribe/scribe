@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Upload, FileText, Star, MoreHorizontal } from "lucide-react";
+import { Plus, Upload, FileText, Star, MoreHorizontal, Folder } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ interface Item {
   isStarred?: boolean;
   sharedWith?: string[];
   icon?: string;
+  color?: string;
 }
 
 /**
@@ -135,7 +136,7 @@ export const WorkspacesItemsSection = ({
                     <div className="flex items-start space-x-3">
                       <div className="relative flex-shrink-0">
                         {item.type === "folder" ? (
-                          <div className="h-6 w-6 rounded" style={{ backgroundColor: item.icon }} />
+                          <Folder className="h-6 w-6" style={{ color: item.color }} />
                         ) : (
                           <div className="text-2xl leading-none">
                             {item.icon}
@@ -199,7 +200,7 @@ export const WorkspacesItemsSection = ({
                       <div className="flex items-center space-x-3">
                         <div className="relative">
                           {item.type === "folder" ? (
-                            <div className="h-5 w-5 rounded" style={{ backgroundColor: item.icon }} />
+                            <Folder className="h-5 w-5" style={{ color: item.color }} />
                           ) : (
                             <div className="text-lg leading-none">
                               {item.icon || '📄'}

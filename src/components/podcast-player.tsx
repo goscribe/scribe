@@ -67,15 +67,24 @@ export function PodcastPlayer({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
     if (!audioRef.current) return;
 
     if (isPlaying) {
       audioRef.current.pause();
+      setIsPlaying(false);
     } else {
-      audioRef.current.play();
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error('Error playing audio:', error);
+        // Ignore the interruption error, it's expected when rapidly clicking
+        if (!(error instanceof Error && error.name === 'AbortError')) {
+          toast.error('Failed to play audio');
+        }
+      }
     }
-    setIsPlaying(!isPlaying);
     onPlayPause?.();
   };
 
@@ -105,7 +114,7 @@ export function PodcastPlayer({
     handleSeek(newTime);
   };
 
-  const handleSegmentClick = (segmentIndex: number) => {
+  const handleSegmentClick = async (segmentIndex: number) => {
     if (useFullEpisode) {
       // When using full episode, seek to segment start time
       const segment = segments[segmentIndex];
@@ -119,11 +128,26 @@ export function PodcastPlayer({
       // Update audio source if needed
       if (audioRef.current && segment.audioUrl) {
         const wasPlaying = isPlaying;
+        
+        // Pause first if playing
+        if (wasPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        // Change source
         audioRef.current.src = segment.audioUrl;
         audioRef.current.currentTime = 0;
         
+        // Resume playback if it was playing
         if (wasPlaying) {
-          audioRef.current.play();
+          try {
+            await audioRef.current.play();
+            setIsPlaying(true);
+          } catch (error) {
+            console.error('Error playing segment:', error);
+          }
         }
       }
     }

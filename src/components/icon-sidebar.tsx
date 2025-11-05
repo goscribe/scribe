@@ -29,8 +29,8 @@ export function IconSidebar() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside className="bg-muted/40 fixed left-0 top-0 z-20 flex h-screen w-14 flex-col items-center border-r border-border pt-14 pb-8">
-        <nav className="flex flex-1 flex-col items-center gap-2">
+      <aside className="bg-background fixed left-0 top-0 z-20 flex h-screen w-14 flex-col items-center border-r border-border pt-16 pb-8">
+        <nav className="flex flex-1 flex-col items-center gap-3">
           {sidebarItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             const Icon = item.icon;
@@ -41,13 +41,13 @@ export function IconSidebar() {
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+                      "flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
                       isActive
-                        ? "bg-muted text-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-primary/10 text-primary shadow-sm"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                     )}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-5 w-5" />
                     <span className="sr-only">{item.name}</span>
                   </Link>
                 </TooltipTrigger>

@@ -25,7 +25,7 @@ export const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
   return (
     <div className="mb-8">
       <h1 className="text-3xl font-semibold text-foreground mb-2">
-        {displayName}'s Workspace
+        {displayName}'s Workspaces
       </h1>
       <p className="text-muted-foreground text-sm">
         Manage your files and folders

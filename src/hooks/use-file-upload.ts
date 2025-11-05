@@ -64,7 +64,7 @@ export const useFileUpload = (workspaceId: string, onSuccess?: () => void) => {
       for (const file of files) {
         const base64Content = await convertFileToBase64(file);
 
-        await uploadAndAnalyzeMutation.mutateAsync({
+        uploadAndAnalyzeMutation.mutate({
           workspaceId,
           file: {
             filename: file.name,

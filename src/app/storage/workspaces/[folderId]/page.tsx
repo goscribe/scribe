@@ -1,14 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, Grid3X3, List, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { useSession } from "@/lib/useSession";
 import { trpc } from "@/lib/trpc";
 import { useRouter, useParams } from "next/navigation";
-import { WorkspacesHeader } from "@/components/workspaces/workspaces-header";
-import { WorkspacesSearch } from "@/components/workspaces/workspaces-search";
-import { WorkspacesItemsSection } from "@/components/workspaces/workspaces-items-section";
+import { 
+  FolderCard, 
+  FileCard, 
+  FolderListItem, 
+  FileListItem,
+} from "@/components/ui/storage";
 
 interface FileItem {
   id: string;
@@ -19,6 +24,7 @@ interface FileItem {
   isStarred?: boolean;
   sharedWith?: string[];
   icon?: string;
+  color?: string;
 }
 
 interface FolderInfo {
@@ -47,7 +53,6 @@ export default function WorkspacesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
   const [folderInfo, setFolderInfo] = useState<FolderInfo | null>(null);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [folders, setFolders] = useState<FileItem[]>([]);
@@ -61,21 +66,20 @@ export default function WorkspacesPage() {
     parentId: folderId,
   });
 
+  // Fetch folder details (name, description, meta) via TRPC
+  const { data: folderDetails, isLoading: folderDetailsLoading } = trpc.workspace.getFolderInformation?.useQuery
+    ? trpc.workspace.getFolderInformation.useQuery({ id: folderId }, { enabled: !!folderId })
+    : ({ data: undefined } as never);
+
   useEffect(() => {
-    if (workspaces) {
+    if (workspaces && folderDetails) {
       const { folderInfo, files, folders } = transformFolderData();
       
       setFolderInfo(folderInfo);
       setFiles(files);
       setFolders(folders);
     }
-  }, [workspaces, folderId]);
-
-  // Fetch folder details (name, description, meta) via TRPC
-  const { data: folderDetails, isLoading: folderDetailsLoading } = trpc.workspace.getFolderInformation?.useQuery
-    ? trpc.workspace.getFolderInformation.useQuery({ id: folderId }, { enabled: !!folderId })
-    : ({ data: undefined } as never);
-
+  }, [workspaces, folderDetails, folderId]);
 
   if (!folderDetails && !folderDetailsLoading) {
     return <div>Folder not found</div>;
@@ -83,13 +87,13 @@ export default function WorkspacesPage() {
 
   // Simple data transformation with normal types
   const transformFolderData = () => {
-    if (!workspaces) return { folderInfo: null, files: [], folders: [] };
+    if (!workspaces || !folderDetails) return { folderInfo: null, files: [], folders: [] };
 
     // Get files (workspaces) that belong to this folder
     const files: FileItem[] = workspaces.workspaces?.map(workspace => ({
       id: workspace.id,
       name: workspace.title || "Untitled File",
-      type: "file",
+      type: "file" as const,
       lastModified: workspace.updatedAt ? new Date(workspace.updatedAt).toLocaleDateString() : "Unknown",
       size: "Unknown",
       isStarred: false,
@@ -101,24 +105,18 @@ export default function WorkspacesPage() {
     const folders: FileItem[] = workspaces.folders?.map(folder => ({
       id: folder.id,
       name: folder.name || "Untitled Folder",
-      type: "folder",
+      type: "folder" as const,
       lastModified: folder.updatedAt ? new Date(folder.updatedAt).toLocaleDateString() : "Unknown",
-      size: "Unknown",
-      isStarred: false,
-      sharedWith: [],
-      icon: folder.color || "#6366f1", // Store color in icon field for folders
+      color: folder.color,
     })) || [];
 
-    // Use real folder details when available
     const folderInfo: FolderInfo = {
-      id: folderId,
+      id: folderDetails?.folder.id || folderId,
       name: folderDetails?.folder.name,
       itemCount: files.length + folders.length,
-      lastModified: folderDetails?.folder.updatedAt
-        ? new Date(folderDetails.folder.updatedAt).toLocaleDateString()
-        : "Unknown",
-      color: folderDetails?.folder.color || "#6366f1", // Use folder's hex color
-      createdBy: folderDetails?.folder.ownerId || "Unknown",
+      lastModified: folderDetails?.folder.updatedAt ? new Date(folderDetails.folder.updatedAt).toLocaleDateString() : "Unknown",
+      color: folderDetails?.folder.color,
+      createdBy: folderDetails?.folder.ownerId,
     };
 
     return { folderInfo, files, folders };
@@ -129,19 +127,32 @@ export default function WorkspacesPage() {
   };
 
   const handleFolderClick = (folderId: string) => {
-    router.push(`/dashboard/workspaces/${folderId}`);
+    router.push(`/storage/workspaces/${folderId}`);
+  };
+  
+  const handleRenameFolder = (folderId: string, folderName: string) => {
+    // TODO: Implement rename functionality
+    console.log('Rename folder:', folderId, folderName);
+  };
+  
+  const handleDeleteFolder = (folderId: string, folderName: string) => {
+    // TODO: Implement delete functionality
+    console.log('Delete folder:', folderId, folderName);
   };
 
   const handleBackClick = () => {
-    router.push('/dashboard');
+    router.push('/storage');
   };
 
-  const allItems = [...folders, ...files];
-  const filteredItems = allItems.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredFiles = files.filter(file =>
+    file.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (workspacesLoading) {
+  const filteredFolders = folders.filter(folder =>
+    folder.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (workspacesLoading || folderDetailsLoading) {
     return (
       <div className="container mx-auto px-6 py-8 max-w-7xl">
         <div className="animate-pulse space-y-8">
@@ -168,7 +179,7 @@ export default function WorkspacesPage() {
             className="h-8"
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-2" />
-            Back to Dashboard
+            Back to Storage
           </Button>
         </div>
         <div className="text-center py-12">
@@ -176,7 +187,7 @@ export default function WorkspacesPage() {
           <p className="text-muted-foreground text-sm mb-4">
             {workspacesError?.message || "The requested folder could not be found."}
           </p>
-          <Button onClick={handleBackClick} variant="outline" size="sm">Go Back to Dashboard</Button>
+          <Button onClick={handleBackClick} variant="outline" size="sm">Go Back to Storage</Button>
         </div>
       </div>
     );
@@ -184,33 +195,165 @@ export default function WorkspacesPage() {
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-7xl">
-      {/* Header */}
-      <WorkspacesHeader
-        folderInfo={{
-          id: folderInfo!.id,
-          name: folderInfo!.name,
-          color: folderInfo!.color
-        }}
-        onBackClick={handleBackClick}
-      />
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBackClick}
+          className="h-8"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 mr-2" />
+          Back
+        </Button>
+        
+        <div className="flex items-center gap-2">
+          <div 
+            className="h-5 w-5 rounded" 
+            style={{ backgroundColor: folderInfo?.color || '#6366f1' }}
+          />
+          <h1 className="text-2xl font-bold">{folderInfo?.name}</h1>
+        </div>
+      </div>
 
       {/* Search and View Controls */}
-      <WorkspacesSearch
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="Search files and folders..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === "grid" ? "secondary" : "ghost"}
+            size="icon"
+            onClick={() => setViewMode("grid")}
+            className="h-9 w-9"
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "secondary" : "ghost"}
+            size="icon"
+            onClick={() => setViewMode("list")}
+            className="h-9 w-9"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            size="sm"
+            onClick={() => setShowUploadDialog(true)}
+            className="ml-2"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload
+          </Button>
+        </div>
+      </div>
 
-      {/* Items Section */}
-      <WorkspacesItemsSection
-        items={filteredItems}
-        viewMode={viewMode}
-        showUploadDialog={showUploadDialog}
-        onToggleUploadDialog={setShowUploadDialog}
-        onFileClick={handleFileClick}
-        onFolderClick={handleFolderClick}
-      />
+      {/* Folders Section */}
+      {filteredFolders.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-sm font-medium text-muted-foreground mb-3">
+            Folders ({filteredFolders.length})
+          </h2>
+          
+          {viewMode === "grid" ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {filteredFolders.map((folder) => (
+                <FolderCard
+                  key={folder.id}
+                  id={folder.id}
+                  name={folder.name}
+                  color={folder.color || "#6366f1"}
+                  lastModified={folder.lastModified}
+                  onClick={handleFolderClick}
+                  onRename={handleRenameFolder}
+                  onDelete={handleDeleteFolder}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filteredFolders.map((folder) => (
+                <FolderListItem
+                  key={folder.id}
+                  id={folder.id}
+                  name={folder.name}
+                  color={folder.color || "#6366f1"}
+                  onClick={handleFolderClick}
+                  onRename={handleRenameFolder}
+                  onDelete={handleDeleteFolder}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Files Section */}
+      {filteredFiles.length > 0 && (
+        <div>
+          <h2 className="text-sm font-medium text-muted-foreground mb-3">
+            Files ({filteredFiles.length})
+          </h2>
+          
+          {viewMode === "grid" ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {filteredFiles.map((file) => (
+                <FileCard
+                  key={file.id}
+                  id={file.id}
+                  name={file.name}
+                  icon={file.icon}
+                  lastModified={file.lastModified}
+                  isStarred={file.isStarred}
+                  onClick={handleFileClick}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filteredFiles.map((file) => (
+                <FileListItem
+                  key={file.id}
+                  id={file.id}
+                  name={file.name}
+                  icon={file.icon}
+                  isStarred={file.isStarred}
+                  onClick={handleFileClick}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {filteredFolders.length === 0 && filteredFiles.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground text-sm mb-4">
+              {searchQuery ? "No items match your search" : "This folder is empty"}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowUploadDialog(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Files
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

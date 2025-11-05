@@ -6,7 +6,7 @@ import { RouterOutputs } from '@goscribe/server';
 type StudyGuide = RouterOutputs['studyguide']['get'];
 
 interface StudyGuideEventHandlers {
-  onGuideUpdate?: (guide: StudyGuide) => void;
+  onGuideInfoComplete?: () => void;
   onGenerationStart?: () => void;
   onGenerationProgress?: (progress: number) => void;
   onGenerationComplete?: (guide: StudyGuide) => void;
@@ -46,31 +46,32 @@ export function usePusherStudyGuide(workspaceId: string) {
     });
 
     // Study guide events
-    channel.bind(`${workspaceId}_studyguide_update`, (data: { guide: StudyGuide }) => {
-      eventHandlersRef.current.onGuideUpdate?.(data.guide);
+    channel.bind(`study_guide_info`, () => {
+      eventHandlersRef.current.onGuideInfoComplete?.();
     });
 
     // Generation events
-    channel.bind(`${workspaceId}_studyguide_generation_start`, () => {
+    channel.bind(`study_guide_generation_start`, () => {
       setIsGenerating(true);
       setGenerationProgress(0);
       eventHandlersRef.current.onGenerationStart?.();
     });
 
-    channel.bind(`${workspaceId}_studyguide_generation_progress`, (data: { progress: number }) => {
+    channel.bind(`study_guide_generation_progress`, (data: { progress: number }) => {
       setGenerationProgress(data.progress);
       eventHandlersRef.current.onGenerationProgress?.(data.progress);
     });
 
-    channel.bind(`${workspaceId}_studyguide_generation_complete`, (data: { guide: StudyGuide }) => {
+    channel.bind(`study_guide_generation_complete`, (data: { guide: StudyGuide }) => {
       setIsGenerating(false);
       setGenerationProgress(100);
       eventHandlersRef.current.onGenerationComplete?.(data.guide);
     });
 
-    channel.bind(`${workspaceId}_studyguide_generation_error`, (data: { error: string }) => {
+    channel.bind(`study_guide_generation_error`, (data: { error: string }) => {
       setIsGenerating(false);
       setGenerationProgress(0);
+      eventHandlersRef.current.onGuideInfoComplete?.();
       eventHandlersRef.current.onGenerationError?.(data.error);
     });
 

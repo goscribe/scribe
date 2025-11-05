@@ -29,7 +29,7 @@ export const useFlashcards = (workspaceId: string) => {
   // Pusher integration for real-time updates
   const { 
     isConnected, 
-    generationProgress,
+    // generationProgress,
     generatingMetadata,
     subscribeToFlashcards 
   } = usePusherFlashcards(workspaceId);
@@ -40,7 +40,7 @@ export const useFlashcards = (workspaceId: string) => {
     { enabled: !!workspaceId }
   );
   
-
+  // @todo: what the sigma
   const { data: isGenerating, isLoading: isGeneratingLoading, error: isGeneratingError, refetch: refetchIsGenerating } = trpc.flashcards.isGenerating.useQuery(
     { workspaceId },
     { enabled: !!workspaceId }
@@ -110,7 +110,6 @@ export const useFlashcards = (workspaceId: string) => {
           toast.error(`Generation failed: ${error}`);
         },
         onFlashcardInfoComplete: (data) => {
-          toast.success("Flashcard information updated!");
           refetch();
           refetchIsGenerating();
         },
@@ -201,7 +200,7 @@ export const useFlashcards = (workspaceId: string) => {
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
     isGenerating: isGenerating || generateFromPromptMutation.isPending,    
-    generationProgress,
+    // generationProgress,
     generatingMetadata,
     
     // Error state

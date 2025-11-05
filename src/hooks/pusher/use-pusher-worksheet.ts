@@ -10,16 +10,15 @@ interface WorksheetEventHandlers {
   onWorksheetUpdate?: (worksheet: Worksheet) => void;
   onWorksheetDelete?: (worksheetId: string) => void;
   onGenerationStart?: () => void;
-  onGenerationProgress?: (progress: number) => void;
   onGenerationComplete?: (worksheet: Worksheet) => void;
   onGenerationError?: (error: string) => void;
-  onWorksheetInfoComplete?: (data: { contentLength: number }) => void;
+  onWorksheetInfoComplete?: () => void;
 }
 
 export function usePusherWorksheet(workspaceId: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
+  // const [generationProgress, setGenerationProgress] = useState(0);
   const pusherRef = useRef<Pusher | null>(null);
   const channelRef = useRef<Channel | null>(null);
   const eventHandlersRef = useRef<WorksheetEventHandlers>({});
@@ -49,45 +48,42 @@ export function usePusherWorksheet(workspaceId: string) {
     });
 
     // Worksheet events
-    channel.bind(`${workspaceId}_worksheet_new`, (data: { worksheet: Worksheet }) => {
+    channel.bind(`worksheet_new`, (data: { worksheet: Worksheet }) => {
       eventHandlersRef.current.onNewWorksheet?.(data.worksheet);
     });
 
-    channel.bind(`${workspaceId}_worksheet_update`, (data: { worksheet: Worksheet }) => {
+    channel.bind(`worksheet_update`, (data: { worksheet: Worksheet }) => {
       eventHandlersRef.current.onWorksheetUpdate?.(data.worksheet);
     });
 
-    channel.bind(`${workspaceId}_worksheet_delete`, (data: { worksheetId: string }) => {
+    channel.bind(`worksheet_delete`, (data: { worksheetId: string }) => {
       eventHandlersRef.current.onWorksheetDelete?.(data.worksheetId);
     });
 
     // Generation events
-    channel.bind(`${workspaceId}_worksheet_generation_start`, () => {
+    channel.bind(`worksheet_generation_start`, () => {
       setIsGenerating(true);
-      setGenerationProgress(0);
+      // setGenerationProgress(0);
       eventHandlersRef.current.onGenerationStart?.();
     });
 
-    channel.bind(`${workspaceId}_worksheet_generation_progress`, (data: { progress: number }) => {
-      setGenerationProgress(data.progress);
-      eventHandlersRef.current.onGenerationProgress?.(data.progress);
-    });
 
-    channel.bind(`${workspaceId}_worksheet_generation_complete`, (data: { worksheet: Worksheet }) => {
+    channel.bind(`worksheet_generation_complete`, (data: { worksheet: Worksheet }) => {
       setIsGenerating(false);
-      setGenerationProgress(100);
+      // setGenerationProgress(100);
       eventHandlersRef.current.onGenerationComplete?.(data.worksheet);
     });
 
-    channel.bind(`${workspaceId}_worksheet_generation_error`, (data: { error: string }) => {
+    channel.bind(`worksheet_generation_error`, (data: { error: string }) => {
       setIsGenerating(false);
-      setGenerationProgress(0);
+      eventHandlersRef.current.onWorksheetInfoComplete?.();
+      // setGenerationProgress(0);
       eventHandlersRef.current.onGenerationError?.(data.error);
     });
 
     // Task completion events
-    channel.bind(`${workspaceId}_worksheet_info`, (data: { data: { contentLength: number } }) => {
-      eventHandlersRef.current.onWorksheetInfoComplete?.(data.data);
+    channel.bind(`worksheet_info`, (data: { data: { contentLength: number } }) => {
+      eventHandlersRef.current.onWorksheetInfoComplete?.();
     });
 
     return () => {
@@ -100,7 +96,7 @@ export function usePusherWorksheet(workspaceId: string) {
       }
       setIsConnected(false);
       setIsGenerating(false);
-      setGenerationProgress(0);
+      // setGenerationProgress(0);
     };
   }, [workspaceId]);
 
@@ -115,7 +111,7 @@ export function usePusherWorksheet(workspaceId: string) {
   return {
     isConnected,
     isGenerating,
-    generationProgress,
+    // generationProgress,
     subscribeToWorksheets,
     unsubscribeFromWorksheets,
   };

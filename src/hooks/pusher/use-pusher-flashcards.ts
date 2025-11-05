@@ -12,13 +12,13 @@ interface FlashcardEventHandlers {
   onGenerationStart?: () => void;
   onGenerationComplete?: (cards: Flashcard[]) => void;
   onGenerationError?: (error: string) => void;
-  onFlashcardInfoComplete?: (data: { contentLength: number }) => void;
+  onFlashcardInfoComplete?: () => void;
 }
 
 export function usePusherFlashcards(workspaceId: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
+  // const [generationProgress, setGenerationProgress] = useState(0);
   const [generatingMetadata, setGeneratingMetadata] = useState<{ quantity: number; topic?: string } | null>(null);
   const pusherRef = useRef<Pusher | null>(null);
   const channelRef = useRef<Channel | null>(null);
@@ -48,45 +48,42 @@ export function usePusherFlashcards(workspaceId: string) {
       toast.error('Flashcard realtime connection error');
     });
 
-    // Flashcard events
-    channel.bind(`${workspaceId}_flash_card_new`, (data: { card: Flashcard }) => {
+    // Flashcard events : specific non-generative events
+    channel.bind(`flash_card_new`, (data: { card: Flashcard }) => {
       eventHandlersRef.current.onNewCard?.(data.card);
     });
 
-    channel.bind(`${workspaceId}_flash_card_update`, (data: { card: Flashcard }) => {
+    channel.bind(`flash_card_update`, (data: { card: Flashcard }) => {
       eventHandlersRef.current.onCardUpdate?.(data.card);
     });
 
-    channel.bind(`${workspaceId}_flash_card_delete`, (data: { cardId: string }) => {
+    channel.bind(`flash_card_delete`, (data: { cardId: string }) => {
       eventHandlersRef.current.onCardDelete?.(data.cardId);
     });
 
     // Generation events
-    channel.bind(`${workspaceId}_flash_card_generation_start`, () => {
+    channel.bind(`flash_card_generation_start`, () => {
       setIsGenerating(true);
-      setGenerationProgress(0);
+      // setGenerationProgress(0);
       eventHandlersRef.current.onGenerationStart?.();
     });
 
-    channel.bind(`${workspaceId}_flash_card_generation_progress`, (data: { progress: number }) => {
-      setGenerationProgress(data.progress);
-    });
-
-    channel.bind(`${workspaceId}_flash_card_generation_complete`, (data: { cards: Flashcard[] }) => {
+    channel.bind(`flash_card_generation_complete`, (data: { cards: Flashcard[] }) => {
       setIsGenerating(false);
-      setGenerationProgress(100);
+      // setGenerationProgress(100);
       eventHandlersRef.current.onGenerationComplete?.(data.cards);
     });
 
-    channel.bind(`${workspaceId}_flash_card_generation_error`, (data: { error: string }) => {
+    channel.bind(`flash_card_generation_error`, (data: { error: string }) => {
       setIsGenerating(false);
-      setGenerationProgress(0);
+      // setGenerationProgress(0);
+      eventHandlersRef.current.onFlashcardInfoComplete?.();
       eventHandlersRef.current.onGenerationError?.(data.error);
     });
 
-    // Task completion events
-    channel.bind(`${workspaceId}_flash_card_info`, (data: { data: { contentLength: number } }) => {
-      eventHandlersRef.current.onFlashcardInfoComplete?.(data.data);
+    // Task refetch
+    channel.bind(`flash_card_info`, () => {
+      eventHandlersRef.current.onFlashcardInfoComplete?.();
     });
 
     return () => {
@@ -99,7 +96,7 @@ export function usePusherFlashcards(workspaceId: string) {
       }
       setIsConnected(false);
       setIsGenerating(false);
-      setGenerationProgress(0);
+      // setGenerationProgress(0);
       setGeneratingMetadata(null);
     };
   }, [workspaceId]);
@@ -115,7 +112,7 @@ export function usePusherFlashcards(workspaceId: string) {
   return {
     isConnected,
     isGenerating,
-    generationProgress,
+    // generationProgress,
     generatingMetadata,
     subscribeToFlashcards,
     unsubscribeFromFlashcards,

@@ -39,10 +39,10 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders and inputs - Linear's subtle borders */
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 250 70% 60%;
+    /* Borders and inputs - Clean like flashcard */
+    --border: 220 13% 91%;  /* Lighter, cleaner border */
+    --input: 220 13% 91%;
+    --ring: 250 70% 60% / 0.2;  /* Softer focus ring */
 
     /* Design tokens - Linear style */
     --radius: 0.5rem;
@@ -56,8 +56,11 @@
     --shadow-medium: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-large: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     
-    /* Smooth transitions */
-    --transition-smooth: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Smooth transitions */
+  --transition-smooth: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Card flip animation timing */
+  --transition-flip: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
@@ -124,23 +127,60 @@
     background: hsl(var(--background));
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
+  /* Default card styling like flashcard */
+  .card {
+    @apply bg-white border-2 rounded-lg;
+    border-color: hsl(var(--primary) / 0.2);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+  }
+  
+  .card:hover {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+    transition: box-shadow 200ms ease-out;
+  }
+  
+  /* Default button styling cleaner */
+  button {
+    @apply transition-all duration-200;
+  }
+  
+  /* Input fields like flashcard */
+  input, textarea {
+    @apply border-2 transition-all duration-200;
+    border-color: hsl(var(--border));
+  }
+  
+  input:focus, textarea:focus {
+    @apply ring-1;
+    ring-color: hsl(var(--primary) / 0.2);
+    border-color: hsl(var(--primary) / 0.3);
+  }
 
-  /* Linear-inspired component styles */
+  /* Clean card styles from flashcard overview */
   .card-hover {
-    transition: var(--transition-smooth);
-    border: 1px solid hsl(var(--border));
-    box-shadow: none !important;
+    transition: box-shadow 200ms ease-out;
+    border: 2px solid hsl(var(--primary) / 0.2);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    background: hsl(var(--background));
   }
 
   .card-hover:hover {
-    border-color: hsl(240 5.9% 85%);
-    background-color: hsl(240 4.8% 99%);
-    box-shadow: none !important;
+    border-color: hsl(var(--primary) / 0.2);
+    background-color: hsl(var(--background));
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
   }
 
   .dark .card-hover:hover {
-    border-color: hsl(240 3.7% 20%);
-    background-color: hsl(240 10% 10%);
+    border-color: hsl(var(--primary) / 0.15);
+    background-color: hsl(240 10% 8%);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.25), 0 10px 10px -5px rgb(0 0 0 / 0.1);
+  }
+  
+  .dark .card {
+    @apply border-2;
+    background: hsl(240 10% 7%);
+    border-color: hsl(var(--primary) / 0.1);
   }
 
   .gradient-primary {
@@ -159,43 +199,82 @@
     box-shadow: var(--shadow-large);
   }
 
-  /* Linear-style list items */
+  /* Clean list items */
   .linear-list-item {
-    transition: var(--transition-smooth);
-    border: 1px solid hsl(var(--border));
-    box-shadow: none !important;
+    transition: all 200ms ease-out;
+    border: 2px solid hsl(var(--border) / 0.5);
+    padding: 1rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   }
 
   .linear-list-item:hover {
-    border-color: hsl(240 5.9% 85%);
-    background-color: hsl(240 4.8% 99%);
-    box-shadow: none !important;
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--muted) / 0.3);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
 
   .dark .linear-list-item:hover {
-    border-color: hsl(240 3.7% 20%);
-    background-color: hsl(240 10% 10%);
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--muted) / 0.3);
   }
 
-  /* Minimal stat cards */
+  /* Clean stat cards */
   .stat-card {
-    border: 1px solid hsl(var(--border));
-    transition: var(--transition-smooth);
-    box-shadow: none !important;
+    border: 2px solid hsl(var(--border) / 0.5);
+    transition: all 200ms ease-out;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
 
   .stat-card:hover {
-    border-color: hsl(240 5.9% 85%);
-    box-shadow: none !important;
+    border-color: hsl(var(--border));
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 
   .dark .stat-card:hover {
-    border-color: hsl(240 3.7% 20%);
+    border-color: hsl(var(--border));
   }
 
-  /* Icon Sidebar and Header */
-  aside, header {
-    box-shadow: none !important;
+  /* Clean spacing defaults from flashcard */
+  .section-spacing {
+    @apply space-y-8;
+  }
+  
+  .section-spacing-sm {
+    @apply space-y-6;
+  }
+  
+  .section-spacing-xs {
+    @apply space-y-4;
+  }
+  
+  /* Generous padding for content like flashcard */
+  .content-padding {
+    @apply p-16;
+  }
+  
+  .content-padding-md {
+    @apply p-8;
+  }
+  
+  .content-padding-sm {
+    @apply p-4;
+  }
+  
+  /* Clean typography hierarchy */
+  h1, h2, h3 {
+    @apply font-bold leading-tight;
+  }
+  
+  h1 {
+    @apply text-4xl;
+  }
+  
+  h2 {
+    @apply text-2xl;
+  }
+  
+  h3 {
+    @apply text-lg;
   }
 
   /* Perspective for flipping cards */
@@ -225,5 +304,82 @@
 
   .flip-card-back {
       transform: rotateY(180deg);
+  }
+}
+
+/* Flashcard-inspired utility classes */
+@layer utilities {
+  /* Clean borders from flashcard */
+  .border-clean {
+    @apply border-2;
+    border-color: hsl(var(--primary) / 0.2);
+  }
+  
+  .border-clean-gray {
+    @apply border-2 border-gray-300;
+  }
+  
+  .border-clean-strong {
+    @apply border-2;
+    border-color: hsl(var(--primary) / 0.3);
+  }
+  
+  /* Generous padding like flashcard cards */
+  .padding-generous {
+    @apply p-16;
+  }
+  
+  .padding-comfortable {
+    @apply p-8;
+  }
+  
+  .padding-compact {
+    @apply p-4;
+  }
+  
+  /* Clean shadows */
+  .shadow-clean {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+  
+  .shadow-clean-lg {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+  
+  /* Decorative dividers */
+  .divider-decorative {
+    @apply flex items-center justify-center gap-2;
+  }
+  
+  .divider-line {
+    @apply h-1 w-8 rounded-full;
+    background-color: hsl(var(--primary) / 0.2);
+  }
+  
+  /* Text styles matching flashcard */
+  .text-display {
+    @apply text-4xl font-bold leading-tight;
+  }
+  
+  .text-label-decorative {
+    @apply text-xs font-semibold text-muted-foreground tracking-wider uppercase;
+  }
+  
+  /* Interactive states */
+  .interactive-clean {
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  .interactive-clean:hover {
+    @apply shadow-clean-lg;
+  }
+  
+  /* Min heights for content areas */
+  .min-h-card {
+    min-height: 400px;
+  }
+  
+  .min-h-content {
+    min-height: 140px;
   }
 }

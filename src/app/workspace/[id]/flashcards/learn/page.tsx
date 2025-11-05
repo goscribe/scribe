@@ -10,6 +10,9 @@ import { Progress } from "@/components/ui/progress";
 import { useFlashcards } from "@/hooks/use-flashcards";
 import { RouterOutputs } from "@goscribe/server";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
+import { FlashcardStats } from "@/components/flashcard/widgets/flashcard-stats";
 
 type Flashcard = RouterOutputs['flashcards']['listCards'][number];
 
@@ -50,7 +53,26 @@ export default function FlashcardLearnPage() {
   const router = useRouter();
   const workspaceId = params.id as string;
 
+  // @todo: replace with dynamically fetched chosen cards from backend.
   const { cards, isLoading } = useFlashcards(workspaceId);
+  
+  // Get flashcard set ID from cards
+  const flashcardSetId = cards[0]?.artifactId;
+  
+  // Fetch progress for all cards in the set
+  const { data: progressData, refetch: refetchProgress, isLoading: progressLoading } = trpc.flashcards.getSetProgress.useQuery(
+    { artifactId: flashcardSetId || '' },
+    { enabled: !!flashcardSetId }
+  );
+  
+  // Progress tracking mutation - refetch immediately after success
+  const recordAttemptMutation = trpc.flashcards.recordStudyAttempt.useMutation({
+    onSuccess: async () => {
+      // Immediately refetch to get updated consecutive count
+      await refetchProgress();
+    },
+  });
+  const recordSessionMutation = trpc.flashcards.recordStudySession.useMutation();
 
   const [cardsWithModes, setCardsWithModes] = useState<CardWithMode[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -60,6 +82,13 @@ export default function FlashcardLearnPage() {
   const [isCorrect, setIsCorrect] = useState(false);
   const [mcqOptions, setMcqOptions] = useState<string[]>([]);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [cardStartTime, setCardStartTime] = useState<number>(Date.now());
+  const [studyAttempts, setStudyAttempts] = useState<Array<{
+    flashcardId: string;
+    isCorrect: boolean;
+    confidence: 'easy' | 'medium' | 'hard';
+    timeSpentMs: number;
+  }>>([]);
 
   /**
    * Initialize cards with random modes
@@ -81,6 +110,12 @@ export default function FlashcardLearnPage() {
 
   const currentCard = cardsWithModes[currentIndex];
   const progress = ((currentIndex + (showFeedback ? 1 : 0)) / cardsWithModes.length) * 100;
+  
+  // Get current card's progress from database
+  const currentCardProgress = progressData?.find(p => p.flashcardId === currentCard?.id)?.progress;
+  const consecutiveWrong = currentCardProgress?.timesIncorrectConsecutive || 0;
+  
+  console.log('Current card:', currentCard?.id, 'consecutiveWrong:', consecutiveWrong, 'progress:', currentCardProgress);
 
   /**
    * Generate MCQ options for the current card
@@ -103,7 +138,7 @@ export default function FlashcardLearnPage() {
   /**
    * Check if the answer is correct
    */
-  const checkAnswer = () => {
+  const checkAnswer = async () => {
     if (!currentCard) return;
 
     let correct = false;
@@ -138,6 +173,29 @@ export default function FlashcardLearnPage() {
       correct: prev.correct + (correct ? 1 : 0),
       total: prev.total + 1,
     }));
+
+    // Calculate time spent on this card
+    const timeSpentMs = Date.now() - cardStartTime;
+
+    // Record the attempt (backend will auto-infer confidence based on consecutive failures)
+    try {
+      await recordAttemptMutation.mutateAsync({
+        flashcardId: currentCard.id,
+        isCorrect: correct,
+        timeSpentMs,
+      });
+      
+      // Also track for bulk session recording at end
+      setStudyAttempts(prev => [...prev, {
+        flashcardId: currentCard.id,
+        isCorrect: correct,
+        confidence: 'medium', // Backend will infer actual difficulty
+        timeSpentMs,
+      }]);
+    } catch (error) {
+      console.error('Failed to record study attempt:', error);
+      // Don't block the user if recording fails
+    }
   };
 
   /**
@@ -169,9 +227,12 @@ export default function FlashcardLearnPage() {
     setSelectedOption(null);
     setShowFeedback(false);
     setIsCorrect(false);
+    setCardStartTime(Date.now()); // Reset timer for new card
+    // Clear optimistic override for previous card
+    // Note: consecutiveWrong comes from database for each card
   };
 
-  if (isLoading || cardsWithModes.length === 0) {
+  if (isLoading || progressLoading || cardsWithModes.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
@@ -188,7 +249,7 @@ export default function FlashcardLearnPage() {
           </div>
           <div className="flex items-center justify-center h-96">
             <p className="text-lg text-muted-foreground font-medium">
-              {isLoading ? "Loading flashcards..." : "No flashcards available to study."}
+              {isLoading ? "Loading flashcards..." : progressLoading ? "Loading progress..." : "No flashcards available to study."}
             </p>
           </div>
         </div>
@@ -214,10 +275,10 @@ export default function FlashcardLearnPage() {
             </Button>
           </div>
           
-          <Card className="border-border/40 shadow-sm">
-            <CardHeader className="pb-6 pt-12 px-8">
+          <Card className="border border-border/50 shadow-sm">
+            <CardHeader className="pb-6 pt-12 px-12">
               <div className="text-center space-y-4">
-                <div className="text-6xl">
+                <div className="text-5xl">
                   {percentage >= 80 ? "🎉" : percentage >= 60 ? "👏" : "💪"}
                 </div>
                 <h2 className="text-3xl font-semibold">
@@ -225,31 +286,33 @@ export default function FlashcardLearnPage() {
                 </h2>
               </div>
             </CardHeader>
-            <CardContent className="space-y-8 px-8 pb-12">
-              <div className="text-center space-y-3">
-                <p className="text-6xl font-bold text-primary">
+            <CardContent className="space-y-6 px-12 pb-12">
+              <div className="text-center space-y-2">
+                <p className="text-5xl font-bold">
                   {score.correct} / {score.total}
                 </p>
-                <p className="text-lg text-muted-foreground">
-                  You got {percentage}% correct
+                <p className="text-base text-muted-foreground">
+                  {percentage}% correct
                 </p>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button 
                   onClick={() => router.push(`/workspace/${workspaceId}/flashcards`)}
-                  className="py-5 px-8 text-base font-medium rounded-lg hover:shadow-md transition-all duration-200"
+                  size="lg"
+                  className="text-sm"
                 >
                   Back to Flashcards
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  size="lg"
                   onClick={() => {
                     setCurrentIndex(0);
                     setScore({ correct: 0, total: 0 });
                     resetCard();
                   }}
-                  className="py-5 px-8 text-base font-medium rounded-lg hover:bg-accent transition-all duration-200"
+                  className="text-sm hover:bg-muted/50"
                 >
                   Study Again
                 </Button>
@@ -275,41 +338,47 @@ export default function FlashcardLearnPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <div className="flex items-center gap-6 text-sm">
-            <span className="text-muted-foreground font-medium">
-              {currentIndex + 1} / {cardsWithModes.length}
-            </span>
-          </div>
         </div>
+        <FlashcardStats timesStudied={currentCardProgress?.timesStudied || 0} masteryLevel={currentCardProgress?.masteryLevel || 0} consecutiveIncorrect={currentCardProgress?.timesIncorrectConsecutive || 0} currentCardIndex={currentIndex} totalCards={cardsWithModes.length} />
 
         {/* Progress Section */}
         <div className="space-y-3">
-          <Progress value={progress} className="h-1.5 bg-secondary" />
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">
-                {score.correct} correct
-              </span>
-              <span className="text-sm text-muted-foreground">
-                out of {score.total}
-              </span>
+          <Progress value={progress} className="h-1.5" />
+          <div className="flex justify-between items-center text-sm">
+            <div className="flex items-center gap-4">
+              {score.total > 0 && (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                    <span className="font-medium">{score.correct} correct</span>
+                  </div>
+                  {score.total - score.correct > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2 w-2 rounded-full bg-red-500" />
+                      <span className="font-medium">{score.total - score.correct} incorrect</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-muted-foreground">
               {Math.round(progress)}% complete
             </span>
           </div>
         </div>
 
         {/* Question Card */}
-        <Card className="border-border/40 shadow-sm">
+        <Card className="border border-border/50 shadow-sm">
           <CardHeader className="pb-6 pt-8 px-8">
-            <div className="space-y-3">
-              <h2 className="text-2xl font-semibold text-center leading-relaxed">
+            <div className="space-y-4">
+              <div className="flex items-center justify-center">
+                <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">
+                  {currentCard?.mode === "mcq" ? "Multiple Choice" : "Type Answer"} • Question {currentIndex + 1}
+                </span>
+              </div>
+              <h2 className="text-2xl font-semibold text-center leading-relaxed px-4">
                 {currentCard?.front}
               </h2>
-              <p className="text-sm text-center text-muted-foreground font-medium">
-                {currentCard?.mode === "mcq" ? "Select the correct answer" : "Type your answer"}
-              </p>
             </div>
           </CardHeader>
           <CardContent className="space-y-6 px-8 pb-8">
@@ -323,13 +392,13 @@ export default function FlashcardLearnPage() {
                     onClick={() => !showFeedback && setSelectedOption(index)}
                     disabled={showFeedback}
                     className={cn(
-                      "w-full px-6 py-4 text-left rounded-lg transition-all duration-200",
-                      "border border-border/60 hover:border-primary/50",
-                      "hover:bg-accent/50 hover:shadow-sm",
-                      "focus:outline-none focus:ring-2 focus:ring-primary/20",
-                      selectedOption === index && !showFeedback && "border-primary bg-primary/5 shadow-sm",
-                      showFeedback && option === currentCard?.back && "border-green-500/60 bg-green-500/10 dark:bg-green-500/20",
-                      showFeedback && selectedOption === index && option !== currentCard?.back && "border-red-500/60 bg-red-500/10 dark:bg-red-500/20",
+                      "w-full px-5 py-4 text-left rounded-lg transition-all duration-200",
+                      "border",
+                      "focus:outline-none focus:ring-1 focus:ring-ring/20",
+                      selectedOption === index && !showFeedback && "border-primary/50 bg-primary/5",
+                      showFeedback && option === currentCard?.back && "border-green-500/50 bg-green-50/50 dark:bg-green-500/10",
+                      showFeedback && selectedOption === index && option !== currentCard?.back && "border-red-500/50 bg-red-50/50 dark:bg-red-500/10",
+                      !showFeedback && selectedOption !== index && "border-border hover:bg-muted/50",
                       showFeedback && "cursor-not-allowed"
                     )}
                   >
@@ -361,11 +430,9 @@ export default function FlashcardLearnPage() {
                   }}
                   disabled={showFeedback}
                   className={cn(
-                    "px-6 py-5 text-base rounded-lg border-border/60",
-                    "focus:ring-2 focus:ring-primary/20",
-                    "transition-all duration-200",
-                    showFeedback && isCorrect && "border-green-500/60 bg-green-500/10 dark:bg-green-500/20",
-                    showFeedback && !isCorrect && "border-red-500/60 bg-red-500/10 dark:bg-red-500/20"
+                    showFeedback && isCorrect && "border-green-500 bg-green-50",
+                    showFeedback && !isCorrect && "border-red-500 bg-red-50",
+                    !showFeedback && "border-border/50 hover:border-primary/20"
                   )}
                 />
                 {showFeedback && !isCorrect && (

@@ -40,12 +40,14 @@ export default function WorksheetPanel() {
     error,
     isCreating,
     isGenerating,
-    generationProgress,
+    // generationProgress,
     createWorksheet,
     openWorksheet,
     openEditPage,
     deleteWorksheet,
-    refetch
+    refetch,
+    correctAnswers,
+    incorrectAnswers
   } = useWorksheet(workspaceId);
 
   // Check if any worksheet is generating and get generating metadata
@@ -57,7 +59,6 @@ export default function WorksheetPanel() {
     return (
       <LoadingSkeleton 
         type="worksheets" 
-        generationProgress={generationProgress}
       />
     );
   }

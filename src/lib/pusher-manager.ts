@@ -1,4 +1,5 @@
 import Pusher from 'pusher-js';
+import { Channel } from 'pusher-js';
 
 // Event data interfaces
 export interface FileAnalysisStartData {
@@ -116,7 +117,7 @@ export interface AnalysisLoadingState {
 
 export class PusherManager {
   private pusher: Pusher;
-  private channel: any;
+  private channel: Channel;
   private workspaceId: string;
   private onStateChange?: (state: AnalysisLoadingState) => void;
   private currentState: AnalysisLoadingState;
@@ -151,7 +152,7 @@ export class PusherManager {
 
   private setupEventListeners() {
     // File Analysis Events
-    this.channel.bind(`${this.workspaceId}_file_analysis_start`, (data: FileAnalysisStartData) => {
+    this.channel.bind(`file_analysis_start`, (data: FileAnalysisStartData) => {
       console.log('File analysis started:', data);
       this.updateState({
         isAnalyzing: true,
@@ -160,7 +161,7 @@ export class PusherManager {
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_file_analysis_complete`, (data: FileAnalysisCompleteData) => {
+    this.channel.bind(`file_analysis_complete`, (data: FileAnalysisCompleteData) => {
       console.log('File analysis completed:', data);
       this.updateState({
         currentStep: 'File analysis completed, generating content...',
@@ -168,7 +169,7 @@ export class PusherManager {
     });
 
     // Study Guide Events
-    this.channel.bind(`${this.workspaceId}_study_guide_load_start`, (data: StudyGuideLoadStartData) => {
+    this.channel.bind(`study_guide_load_start`, (data: StudyGuideLoadStartData) => {
       console.log('Study guide generation started:', data);
       this.updateState({
         currentStep: 'Generating study guide...',
@@ -176,14 +177,14 @@ export class PusherManager {
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_study_guide_info`, (data: StudyGuideInfoData) => {
+    this.channel.bind(`study_guide_info`, (data: StudyGuideInfoData) => {
       console.log('Study guide content generated:', data);
       this.updateState({
         currentStep: `Study guide content generated (${data.contentLength} characters)`,
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_studyguide_ended`, (data: StudyGuideEndedData) => {
+    this.channel.bind(`studyguide_ended`, (data: StudyGuideEndedData) => {
       console.log('Study guide completed:', data);
       this.updateState({
         currentStep: 'Study guide completed!',
@@ -192,7 +193,7 @@ export class PusherManager {
     });
 
     // Flashcard Events
-    this.channel.bind(`${this.workspaceId}_flash_card_load_start`, (data: FlashCardLoadStartData) => {
+    this.channel.bind(`flash_card_load_start`, (data: FlashCardLoadStartData) => {
       console.log('Flashcard generation started:', data);
       this.updateState({
         currentStep: 'Generating flashcards...',
@@ -200,14 +201,14 @@ export class PusherManager {
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_flash_card_info`, (data: FlashCardInfoData) => {
+    this.channel.bind(`flash_card_info`, (data: FlashCardInfoData) => {
       console.log('Flashcard content generated:', data);
       this.updateState({
         currentStep: `Flashcard content generated (${data.contentLength} characters)`,
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_flashcard_ended`, (data: FlashCardEndedData) => {
+    this.channel.bind(`flashcard_ended`, (data: FlashCardEndedData) => {
       console.log('Flashcards completed:', data);
       this.updateState({
         currentStep: 'Flashcards completed!',
@@ -216,7 +217,7 @@ export class PusherManager {
     });
 
     // Worksheet Events
-    this.channel.bind(`${this.workspaceId}_worksheet_load_start`, (data: WorksheetLoadStartData) => {
+    this.channel.bind(`worksheet_load_start`, (data: WorksheetLoadStartData) => {
       console.log('Worksheet generation started:', data);
       this.updateState({
         currentStep: 'Generating worksheet...',
@@ -224,14 +225,14 @@ export class PusherManager {
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_worksheet_info`, (data: WorksheetInfoData) => {
+    this.channel.bind(`worksheet_info`, (data: WorksheetInfoData) => {
       console.log('Worksheet content generated:', data);
       this.updateState({
         currentStep: `Worksheet content generated (${data.contentLength} characters)`,
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_worksheet_ended`, (data: WorksheetEndedData) => {
+    this.channel.bind(`worksheet_ended`, (data: WorksheetEndedData) => {
       console.log('Worksheet completed:', data);
       this.updateState({
         currentStep: 'Worksheet completed!',
@@ -240,7 +241,7 @@ export class PusherManager {
     });
 
     // Cleanup Events
-    this.channel.bind(`${this.workspaceId}_analysis_cleanup_start`, (data: AnalysisCleanupStartData) => {
+    this.channel.bind(`analysis_cleanup_start`, (data: AnalysisCleanupStartData) => {
       console.log('Cleanup started:', data);
       this.updateState({
         currentStep: 'Cleaning up...',
@@ -248,7 +249,7 @@ export class PusherManager {
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_analysis_cleanup_complete`, (data: AnalysisCleanupCompleteData) => {
+    this.channel.bind(`analysis_cleanup_complete`, (data: AnalysisCleanupCompleteData) => {
       console.log('Cleanup completed:', data);
       this.updateState({
         currentStep: 'Cleanup completed!',
@@ -256,7 +257,7 @@ export class PusherManager {
     });
 
     // Overall Completion
-    this.channel.bind(`${this.workspaceId}_analysis_ended`, (data: AnalysisEndedData) => {
+    this.channel.bind(`analysis_ended`, (data: AnalysisEndedData) => {
       console.log('Analysis completed:', data);
       this.updateState({
         isAnalyzing: false,
@@ -273,7 +274,7 @@ export class PusherManager {
     });
 
     // Error Events
-    this.channel.bind(`${this.workspaceId}_analysis_error`, (data: AnalysisErrorData) => {
+    this.channel.bind(`analysis_error`, (data: AnalysisErrorData) => {
       console.error('Analysis error:', data);
       this.updateState({
         isAnalyzing: false,
@@ -289,7 +290,7 @@ export class PusherManager {
       });
     });
 
-    this.channel.bind(`${this.workspaceId}_file_analysis_error`, (data: SpecificErrorData) => {
+    this.channel.bind(`file_analysis_error`, (data: SpecificErrorData) => {
       console.error('File analysis error:', data);
       this.updateState({
         isAnalyzing: false,

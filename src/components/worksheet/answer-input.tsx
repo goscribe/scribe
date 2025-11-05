@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { RouterOutputs } from "@goscribe/server";
+import { WorksheetQuestionMeta } from "@/types/worksheet";
+import { useEffect, useState } from "react";
 
 type WorksheetProblem = RouterOutputs['worksheets']['get']['questions'][number];
 
@@ -21,6 +23,8 @@ interface AnswerInputProps {
   isCompleted: boolean;
   /** Whether the answer is incorrect */
   isIncorrect: boolean;
+  /** Whether the input should be disabled */
+  disabled?: boolean;
   /** Callback when answer changes */
   onAnswerChange: (answer: string) => void;
 }
@@ -41,16 +45,19 @@ export const AnswerInput = ({
   currentAnswer,
   isCompleted,
   isIncorrect,
+  disabled = false,
   onAnswerChange
 }: AnswerInputProps) => {
+
+  console.log("AnswerInput", disabled || (isCompleted && !isIncorrect));
   switch (problem.type) {
     case 'MULTIPLE_CHOICE':
-      const options = problem.meta?.options || [];
+      const options = (problem.meta as WorksheetQuestionMeta)?.options || [];
       return (
         <RadioGroup
           value={currentAnswer}
           onValueChange={onAnswerChange}
-          disabled={isCompleted}
+          disabled={disabled || (isCompleted && !isIncorrect)}
           className="space-y-2"
         >
           {options.map((option, index) => (
@@ -69,7 +76,7 @@ export const AnswerInput = ({
         <RadioGroup
           value={currentAnswer}
           onValueChange={onAnswerChange}
-          disabled={isCompleted}
+          disabled={disabled || isCompleted}
           className="flex gap-4"
         >
           <div className="flex items-center space-x-2">
@@ -90,7 +97,7 @@ export const AnswerInput = ({
           placeholder="Enter your answer"
           value={currentAnswer}
           onChange={(e) => onAnswerChange(e.target.value)}
-          disabled={isCompleted}
+          disabled={disabled || (isCompleted && !isIncorrect)}
           className={cn(
             "max-w-xs",
             isIncorrect && "border-destructive"
@@ -107,7 +114,7 @@ export const AnswerInput = ({
           placeholder="Enter your answer"
           value={currentAnswer}
           onChange={(e) => onAnswerChange(e.target.value)}
-          disabled={isCompleted}
+          disabled={disabled || (isCompleted && !isIncorrect)}
           rows={3}
           className={cn(
             "resize-none",

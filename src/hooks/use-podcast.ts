@@ -30,6 +30,7 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
   // State management
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [playingSegment, setPlayingSegment] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
   const [audioElements, setAudioElements] = useState<HTMLAudioElement[]>([]);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isRegenerateDialogOpen, setIsRegenerateDialogOpen] = useState(false);
@@ -47,21 +48,38 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
   const deleteEpisodeMutation = trpc.podcast.deleteEpisode.useMutation();
   const updateEpisodeMutation = trpc.podcast.updateEpisode.useMutation();
   const regenerateSegmentMutation = trpc.podcast.regenerateSegment.useMutation();
-  const updateSegmentMutation = trpc.podcast.updateSegment.useMutation();
   const deleteSegmentMutation = trpc.podcast.deleteSegment.useMutation();
 
   // Real-time podcast events
-  const { state: _pusherState } = usePusherPodcast(workspaceId);
-  
-  // TODO: Use _pusherState for real-time updates (currently unused)
+  // Pass refetch callback to pusher hook for automatic refetching on podcast events
+  const { state: pusherState } = usePusherPodcast(workspaceId, () => refetch());
 
   // Sort segments by order
   const sortedSegments = episode?.segments ? [...episode.segments].sort((a, b) => a.order - b.order) : [];
 
+  // Log pusher state changes for debugging
+  useEffect(() => {
+    if (!pusherState) return;
+    
+    const { latestPodcastInfo, lastCompleted, lastError } = pusherState;
+    
+    if (latestPodcastInfo?.artifactId === podcastId) {
+      console.log('Current podcast info updated:', latestPodcastInfo);
+    }
+    
+    if (lastCompleted?.artifactId === podcastId) {
+      console.log('Current podcast completed:', lastCompleted);
+    }
+    
+    if (lastError?.artifactId === podcastId) {
+      console.log('Current podcast error:', lastError);
+    }
+  }, [pusherState, podcastId]);
+
   /**
    * Handles segment play/pause
    */
-  const handleSegmentPlayPause = (segmentIndex: number) => {
+  const handleSegmentPlayPause = async (segmentIndex: number) => {
     if (playingSegment === segmentIndex) {
       // Pause current segment
       if (audioElements[segmentIndex]) {
@@ -69,15 +87,22 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
       }
       setPlayingSegment(null);
     } else {
-      // Stop any currently playing segment
+      // Stop any currently playing segment first
       if (playingSegment !== null && audioElements[playingSegment]) {
         audioElements[playingSegment].pause();
+        // Wait a tick for pause to complete
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
       
       // Play new segment
       if (audioElements[segmentIndex]) {
-        audioElements[segmentIndex].play();
-        setPlayingSegment(segmentIndex);
+        try {
+          await audioElements[segmentIndex].play();
+          setPlayingSegment(segmentIndex);
+        } catch (error) {
+          console.error('Error playing audio:', error);
+          toast.error('Failed to play audio segment');
+        }
       }
     }
   };
@@ -114,6 +139,7 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
       setIsRegenerating(true);
       
       await regenerateSegmentMutation.mutateAsync({
+        episodeId: podcastId,
         segmentId,
         prompt
       });
@@ -132,27 +158,6 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
     }
   };
 
-  /**
-   * Handles segment editing
-   */
-  const handleEditSegment = async (segmentId: string, updates: { title?: string; content?: string }) => {
-    try {
-      await updateSegmentMutation.mutateAsync({
-        segmentId,
-        ...updates
-      });
-      
-      toast.success("Segment updated");
-      
-      // Refresh the episode data
-      await refetch();
-      
-    } catch (error) {
-      console.error("Failed to update segment:", error);
-      toast.error("Failed to update segment");
-      throw error;
-    }
-  };
 
   /**
    * Handles segment download
@@ -212,55 +217,70 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
 
   // Initialize audio elements when segments change
   useEffect(() => {
-    if (episode?.segments) {
-      const sortedSegments = [...episode.segments].sort((a, b) => a.order - b.order);
-      const newAudioElements: HTMLAudioElement[] = [];
+    if (!episode?.segments || episode.segments.length === 0) return;
+    
+    const sortedSegments = [...episode.segments].sort((a, b) => a.order - b.order);
+    const newAudioElements: HTMLAudioElement[] = [];
+    
+    sortedSegments.forEach((segment, index) => {
+      if (!segment.audioUrl) return;
       
-      sortedSegments.forEach((segment, index) => {
-        const audio = new Audio(segment.audioUrl!);
-        
-        // Handle segment end - auto-play next segment
-        audio.addEventListener('ended', () => {
-          if (index < sortedSegments.length - 1) {
-            // Auto-play next segment
-            const nextAudio = newAudioElements[index + 1];
-            if (nextAudio) {
-              nextAudio.play();
-              setPlayingSegment(index + 1);
-            }
-          } else {
-            // Last segment finished
-            setPlayingSegment(null);
-          }
-        });
-        
-        // Handle play/pause events
-        audio.addEventListener('play', () => {
-          setPlayingSegment(index);
-        });
-        
-        audio.addEventListener('pause', () => {
-          if (playingSegment === index) {
-            setPlayingSegment(null);
-          }
-        });
-        
-        newAudioElements.push(audio);
-      });
+      const audio = new Audio(segment.audioUrl);
       
-      setAudioElements(newAudioElements);
-      
-      // Cleanup function
-      return () => {
-        newAudioElements.forEach(audio => {
-          audio.pause();
-          audio.removeEventListener('ended', () => {});
-          audio.removeEventListener('play', () => {});
-          audio.removeEventListener('pause', () => {});
-        });
+      // Track time updates
+      const onTimeUpdate = () => {
+        // Update current time based on segment's start time + audio current time
+        setCurrentTime(segment.startTime + audio.currentTime);
       };
-    }
-  }, [episode?.segments, playingSegment]);
+      
+      // Handle segment end - auto-play next segment
+      const onEnded = () => {
+        if (index < sortedSegments.length - 1) {
+          // Auto-play next segment
+          const nextAudio = newAudioElements[index + 1];
+          if (nextAudio) {
+            nextAudio.play().catch(err => {
+              console.error('Failed to auto-play next segment:', err);
+            });
+            setPlayingSegment(index + 1);
+          }
+        } else {
+          // Last segment finished
+          setPlayingSegment(null);
+          setCurrentTime(0);
+        }
+      };
+      
+      const onPlay = () => {
+        setPlayingSegment(index);
+      };
+      
+      const onPause = () => {
+        // Only clear if this is the currently playing segment
+        setPlayingSegment(prev => prev === index ? null : prev);
+      };
+      
+      audio.addEventListener('timeupdate', onTimeUpdate);
+      audio.addEventListener('ended', onEnded);
+      audio.addEventListener('play', onPlay);
+      audio.addEventListener('pause', onPause);
+      
+      newAudioElements.push(audio);
+    });
+    
+    setAudioElements(newAudioElements);
+    
+    // Cleanup function
+    return () => {
+      newAudioElements.forEach(audio => {
+        audio.pause();
+        audio.removeEventListener('timeupdate', () => {});
+        audio.removeEventListener('ended', () => {});
+        audio.removeEventListener('play', () => {});
+        audio.removeEventListener('pause', () => {});
+      });
+    };
+  }, [episode?.segments]); // REMOVED playingSegment from dependencies!
 
   return {
     // Data
@@ -272,6 +292,7 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
     // State
     isBookmarked,
     playingSegment,
+    currentTime,
     isRenameDialogOpen,
     isRegenerateDialogOpen,
     selectedSegment,
@@ -286,7 +307,6 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
     handleSegmentPlayPause,
     handleRenamePodcast,
     handleSegmentRegenerate,
-    handleEditSegment,
     handleDownloadSegment,
     handleDeleteSegment,
     handleDeleteEpisode,

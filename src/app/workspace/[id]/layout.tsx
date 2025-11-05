@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { AnalysisLoadingOverlay } from "@/components/analysis-loading-overlay";
-import { PusherTestPanel } from "@/components/pusher-test-panel";
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
 import { SidebarToggle } from "@/components/workspace/sidebar-toggle";
 import { useFileUpload } from "@/hooks/use-file-upload";
-import { useAnalysisOverlay } from "@/hooks/use-analysis-overlay";
 import { trpc } from "@/lib/trpc";
 import { WorkspaceTab } from "@/components/workspace/navigation-tabs";
+import { usePusherAnalysis } from "@/hooks/pusher/use-pusher-analysis";
 
 /**
  * Props for the WorkspaceLayout component
@@ -50,8 +49,13 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   const activeTab = pathname.split('/').pop() as WorkspaceTab;
 
-  // Custom hooks for analysis and file upload functionality
-  const { loadingState, showOverlay, resetState, hideOverlay } = useAnalysisOverlay(id as string);
+  const { progress, isAnalyzing } = usePusherAnalysis({
+    workspaceId: id as string,
+    enabled: true,
+  });
+
+  const [analysisOverlayOpen, setAnalysisOverlayOpen] = useState(false);
+  
   const { 
     isUploading, 
     fileInputRef, 
@@ -62,7 +66,6 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     handleUploadClick 
   } = useFileUpload(id as string, () => {
     refetchWorkspace();
-    resetState();
   });
 
   // Workspace data fetching
@@ -119,20 +122,13 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
       </main>
       
       {/* AI Analysis Loading Overlay */}
-      {/* <AnalysisLoadingOverlay
-        isVisible={showOverlay}
-        loadingState={loadingState}
-        onClose={hideOverlay}
-      /> */}
-      
-      {/* Development Test Panel */}
-      {process.env.NODE_ENV === 'development' && (
-        <PusherTestPanel
-          workspaceId={id as string}
-          loadingState={loadingState}
-          onReset={resetState}
-        />
-      )}
+      <AnalysisLoadingOverlay
+        workspaceId={id as string}
+        isOpen={isAnalyzing || false}
+        onClose={() => {
+          setAnalysisOverlayOpen(false);
+        }}
+      />
     </div>
   );
 }

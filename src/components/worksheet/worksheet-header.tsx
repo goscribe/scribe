@@ -3,7 +3,6 @@
 import { Edit3, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { RouterOutputs } from "@goscribe/server";
 
@@ -15,12 +14,6 @@ type Worksheet = RouterOutputs['worksheets']['get'];
 interface WorksheetHeaderProps {
   /** The worksheet data */
   worksheet: Worksheet;
-  /** Current progress percentage */
-  progressPercentage: number;
-  /** Number of completed problems */
-  completedCount: number;
-  /** Total number of problems */
-  totalProblems: number;
   /** Callback when back button is clicked */
   onBack: () => void;
   /** Callback when edit button is clicked */
@@ -28,12 +21,11 @@ interface WorksheetHeaderProps {
 }
 
 /**
- * Worksheet header component with title, progress, and actions
+ * Worksheet header component with title and actions
  * 
  * Features:
  * - Worksheet title and description
  * - Difficulty badge with color coding
- * - Progress bar with completion stats
  * - Back and edit action buttons
  * 
  * @param props - WorksheetHeaderProps
@@ -41,9 +33,6 @@ interface WorksheetHeaderProps {
  */
 export const WorksheetHeader = ({
   worksheet,
-  progressPercentage,
-  completedCount,
-  totalProblems,
   onBack,
   onEdit
 }: WorksheetHeaderProps) => {
@@ -87,7 +76,7 @@ export const WorksheetHeader = ({
         <div className="flex items-center gap-2">
           <Badge 
             variant="outline" 
-            className={cn("text-xs", getDifficultyBadgeClasses(worksheet.difficulty))}
+            className={cn("text-xs", getDifficultyBadgeClasses(worksheet.difficulty || 'unset'))}
           >
             {worksheet.difficulty?.toLowerCase()}
           </Badge>
@@ -101,15 +90,6 @@ export const WorksheetHeader = ({
             Edit
           </Button>
         </div>
-      </div>
-
-      {/* Progress */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Progress: {completedCount}/{totalProblems} completed</span>
-          <span>{Math.round(progressPercentage)}%</span>
-        </div>
-        <Progress value={progressPercentage} className="h-2" />
       </div>
     </div>
   );

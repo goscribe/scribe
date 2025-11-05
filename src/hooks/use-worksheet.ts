@@ -39,12 +39,13 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
   const [completedProblems, setCompletedProblems] = useState<Set<string>>(new Set());
   const [showAnswers, setShowAnswers] = useState(false);
   const [incorrectAnswers, setIncorrectAnswers] = useState<Set<string>>(new Set());
-
+  const [correctAnswers, setCorrectAnswers] = useState<Set<string>>(new Set());
+  const [isCheckingAnswer, setIsCheckingAnswer] = useState(false);
   // Pusher integration for real-time updates
   const { 
     isConnected, 
     isGenerating, 
-    generationProgress,
+    // generationProgress,
     subscribeToWorksheets 
   } = usePusherWorksheet(workspaceId);
 
@@ -53,6 +54,34 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
     { workspaceId },
     { enabled: !!workspaceId }
   );
+
+  const checkAnswerMutation = trpc.worksheets.checkAnswer.useMutation({
+    onSuccess: (data) => {
+        refetchWorksheet();
+         // Update local state
+        setIsCheckingAnswer(false);
+        refetchProgress();
+        //        return { isCorrect, userMarkScheme, progress };
+    //   const { isCorrect, userMarkScheme, progress } = data;
+    //   const problemId = progress.worksheetQuestionId;
+    // setCompletedProblems(prev => new Set([...prev, problemId]));
+    // if (!isCorrect) {
+    //   setIncorrectAnswers(prev => new Set([...prev, problemId]));
+    // }
+    
+    // // Save to server
+    // updateProblemMutation.mutate({
+    //   problemId,
+    //   completed: true,
+    //   correct: isCorrect,
+    //   answer,
+    // });
+      toast.success("Answer checked successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to check answer");
+    },
+  });
 
   const { data: worksheet, isLoading: worksheetLoading, error: worksheetError, refetch: refetchWorksheet } = trpc.worksheets.get.useQuery(
     { worksheetId: worksheetId! },
@@ -96,9 +125,26 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
   });
 
   const updateProblemMutation = trpc.worksheets.updateProblemStatus.useMutation({
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       toast.success("Answer saved!");
       refetchProgress();
+      
+      // Update local state immediately for better UX
+      if (variables.completed) {
+        setCompletedProblems(prev => new Set([...prev, variables.problemId]));
+        
+        // Track if the answer was incorrect
+        if (!variables.correct) {
+          setIncorrectAnswers(prev => new Set([...prev, variables.problemId]));
+        } else {
+          // Remove from incorrect if it was previously incorrect but now correct
+          setIncorrectAnswers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(variables.problemId);
+            return newSet;
+          });
+        }
+      }
     },
     onError: (error) => {
       toast.error(error.message || "Failed to save answer");
@@ -182,6 +228,8 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
       );
 
       const completed = new Set<string>();
+      const incorrect = new Set<string>();
+      const correct = new Set<string>();
       const answers: Record<string, string> = {};
 
       worksheet.questions.forEach((problem: WorksheetProblem) => {
@@ -190,6 +238,13 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
         // Check if question is completed based on progress data
         if (progress?.completedAt) {
           completed.add(problem.id);
+          
+          // Track incorrect answers (completed but not correct)
+          if (!progress.correct) {
+            incorrect.add(problem.id);
+          } else {
+            correct.add(problem.id);
+          }
         }
         
         // Initialize user answers from progress data
@@ -199,6 +254,8 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
       });
 
       setCompletedProblems(completed);
+      setIncorrectAnswers(incorrect);
+      setCorrectAnswers(correct);
       setUserAnswers(answers);
     }
   }, [worksheet, progressData]);
@@ -294,27 +351,38 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
 
   /**
    * Checks if an answer is correct
+   * @param problemId - The ID of the problem to check
    * @param userAnswer - The user's answer
-   * @param correctAnswer - The correct answer
    * @param type - The problem type
    * @returns Whether the answer is correct
    */
-  const checkAnswer = (userAnswer: string, correctAnswer: string, type: string): boolean => {
-    if (!userAnswer || !correctAnswer) return false;
+  const checkAnswer = (problemId: string, userAnswer: string, type: string) => {
+    if (!userAnswer) return false;
     
-    switch (type) {
-      case 'TEXT':
-        return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
-      case 'NUMERIC':
-        return parseFloat(userAnswer) === parseFloat(correctAnswer);
-      case 'TRUE_FALSE':
-        return userAnswer.toLowerCase() === correctAnswer.toLowerCase();
-      case 'MULTIPLE_CHOICE':
-      case 'MATCHING':
-        return userAnswer === correctAnswer;
-      default:
-        return userAnswer === correctAnswer;
-    }
+    // worksheetId: z.string(),
+    // questionId: z.string(),
+    // answer: z.string().min(1),
+    checkAnswerMutation.mutate({
+      worksheetId: worksheetId!,
+      questionId: problemId,
+      answer: userAnswer,
+    });
+
+    return true;
+
+    // switch (type) {
+    //   case 'TEXT':
+    //     return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+    //   case 'NUMERIC':
+    //     return parseFloat(userAnswer) === parseFloat(correctAnswer);
+    //   case 'TRUE_FALSE':
+    //     return userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+    //   case 'MULTIPLE_CHOICE':
+    //   case 'MATCHING':
+    //     return userAnswer === correctAnswer;
+    //   default:
+    //     return userAnswer === correctAnswer;
+    // }
   };
 
   /**
@@ -327,22 +395,9 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
     
     if (!problem) return;
     
+    setIsCheckingAnswer(true);
     // Check if answer is correct
-    const isCorrect = checkAnswer(answer, problem.answer || '', problem.type);
-    
-    // Update local state
-    setCompletedProblems(prev => new Set([...prev, problemId]));
-    if (!isCorrect) {
-      setIncorrectAnswers(prev => new Set([...prev, problemId]));
-    }
-    
-    // Save to server
-    updateProblemMutation.mutate({
-      problemId,
-      completed: true,
-      correct: isCorrect,
-      answer,
-    });
+    checkAnswer(problemId, answer, problem.type);
   };
 
   /**
@@ -395,12 +450,16 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
       error: worksheetError,
       /** User's answers for each problem */
       userAnswers,
+      /** Whether an answer is being checked */
+      isCheckingAnswer,
+      /** Set of correct answer problem IDs */
+      correctAnswers,
+      /** Set of incorrect answer problem IDs */
+      incorrectAnswers,
       /** Set of completed problem IDs */
       completedProblems,
       /** Whether to show correct answers */
       showAnswers,
-      /** Set of incorrect answer problem IDs */
-      incorrectAnswers,
       /** Function to update an answer */
       updateAnswer,
       /** Function to complete a problem */
@@ -434,7 +493,7 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
       /** Whether worksheet generation is in progress */
       isGenerating,
       /** Generation progress percentage */
-      generationProgress,
+      // generationProgress,
       /** Function to create a new worksheet */
       createWorksheet,
       /** Function to open a worksheet */

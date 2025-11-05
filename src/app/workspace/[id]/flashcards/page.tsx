@@ -52,7 +52,6 @@ export default function FlashcardsPanel() {
     isCreating,
     isUpdating,
     isGenerating, 
-    generationProgress,
     generatingMetadata,
     error,
     createCard,
@@ -117,11 +116,10 @@ export default function FlashcardsPanel() {
   };
 
   // Loading state
-  if (isLoading || isGenerating) {
+  if (isLoading) {
     return (
       <LoadingSkeleton 
         type="flashcards" 
-        generationProgress={generationProgress}
       />
     );
   }
