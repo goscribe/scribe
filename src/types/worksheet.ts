@@ -1,13 +1,3 @@
-import type { Prisma } from '@prisma/client';
-
-/**
- * Common types for the application
- */
-export type PrismaTransaction = Omit<
-  Prisma.TransactionClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'
->;
-
 /**
  * User types
  */

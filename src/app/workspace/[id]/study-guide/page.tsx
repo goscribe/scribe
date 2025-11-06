@@ -79,10 +79,10 @@ export default function StudyGuidePanel() {
     useEffect(() => {
         if (isConnected) {
             subscribeToStudyGuide({
-                onGuideUpdate: (updatedGuide) => {
-                    // Guide will be updated via refetch
-                    toast.success("Study guide updated!");
-                },
+                // onGuideUpdate: () => {
+                //     // Guide will be updated via refetch
+                //     toast.success("Study guide updated!");
+                // },
                 onGenerationStart: () => {
                     toast.info("Starting study guide generation...");
                 },

@@ -1,21 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Mic, Lightbulb, Plus, X, Users } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { 
+  Loader2, 
+  Mic, 
+  Lightbulb, 
+  Plus, 
+  X, 
+  Users,
+  ChevronDown 
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-export type VoiceType = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+export type SpeakerRole = 'host' | 'guest' | 'expert';
 
 export interface Speaker {
-  id: string;
-  name: string;
-  voice: VoiceType;
-  role?: string;
+  id: string; // This IS the ElevenLabs voice ID
+  role: SpeakerRole;
+  name?: string;
 }
 
 export interface PodcastGenerationForm {
@@ -31,13 +43,23 @@ interface PodcastGenerationFormProps {
   defaultValues?: Partial<PodcastGenerationForm>;
 }
 
-const VOICE_OPTIONS = [
-  { value: 'alloy', label: 'Alloy', description: 'Balanced and versatile' },
-  { value: 'echo', label: 'Echo', description: 'Clear and professional' },
-  { value: 'fable', label: 'Fable', description: 'Warm and engaging' },
-  { value: 'onyx', label: 'Onyx', description: 'Deep and authoritative' },
-  { value: 'nova', label: 'Nova', description: 'Bright and energetic' },
-  { value: 'shimmer', label: 'Shimmer', description: 'Smooth and melodic' },
+const ROLE_OPTIONS = [
+  { value: 'host', label: 'Host', icon: '🎙️' },
+  { value: 'guest', label: 'Guest', icon: '👤' },
+  { value: 'expert', label: 'Expert', icon: '🎓' },
+];
+
+// ElevenLabs Voice IDs - Popular voices
+const ELEVENLABS_VOICES = [
+  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', description: 'Calm & warm', gender: 'F' },
+  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', description: 'Strong & confident', gender: 'F' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', description: 'Soft & friendly', gender: 'F' },
+  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', description: 'Well-rounded', gender: 'M' },
+  { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', description: 'Young & energetic', gender: 'F' },
+  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', description: 'Deep & narrative', gender: 'M' },
+  { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', description: 'Crisp & mature', gender: 'M' },
+  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', description: 'Professional', gender: 'M' },
+  { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', description: 'Young & casual', gender: 'M' },
 ];
 
 const PROMPT_EXAMPLES = [
@@ -55,8 +77,8 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
     description: defaultValues?.description || '',
     userPrompt: defaultValues?.userPrompt || '',
     speakers: defaultValues?.speakers || [
-      { id: '1', name: 'Host', voice: 'nova', role: 'Main Host' },
-      { id: '2', name: 'Guest', voice: 'alloy', role: 'Expert Guest' }
+      { role: 'host', name: 'Rachel', id: '21m00Tcm4TlvDq8ikWAM' },
+      { role: 'guest', name: 'Josh', id: 'TxGEqnHWrfWFTfGW9XjX' }
     ],
   });
 
@@ -76,6 +98,10 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
 
     if (formData.userPrompt.trim().length < 2) {
       newErrors.userPrompt = 'User prompt must be at least 2 characters';
+    }
+
+    if (formData.speakers.length === 0) {
+      newErrors.speakers = 'At least one speaker is required';
     }
 
     setErrors(newErrors);
@@ -102,12 +128,16 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
     setShowExamples(false);
   };
 
-  const addSpeaker = () => {
+  const addSpeaker = (voice: typeof ELEVENLABS_VOICES[0]) => {
+    // Check if this voice is already in use
+    if (formData.speakers.some(s => s.id === voice.id)) {
+      return; // Don't add duplicate voices
+    }
+    
     const newSpeaker: Speaker = {
-      id: Date.now().toString(),
-      name: `Speaker ${formData.speakers.length + 1}`,
-      voice: 'echo',
-      role: ''
+      id: voice.id, // Use the ElevenLabs voice ID as the speaker ID
+      role: 'guest',
+      name: voice.name
     };
     setFormData(prev => ({
       ...prev,
@@ -116,7 +146,7 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
   };
 
   const removeSpeaker = (id: string) => {
-    if (formData.speakers.length > 2) {
+    if (formData.speakers.length > 1) {
       setFormData(prev => ({
         ...prev,
         speakers: prev.speakers.filter(s => s.id !== id)
@@ -135,209 +165,227 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">
-              Title <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => updateField('title', e.target.value)}
-              placeholder="Enter podcast title..."
-              className={errors.title ? 'border-red-500' : ''}
-              disabled={isLoading}
-            />
-            {errors.title && (
-              <p className="text-sm text-red-500">{errors.title}</p>
-            )}
-          </div>
+      {/* Title */}
+      <div className="space-y-2">
+        <Label htmlFor="title">
+          Title <span className="text-red-500">*</span>
+        </Label>
+        <Input
+          id="title"
+          value={formData.title}
+          onChange={(e) => updateField('title', e.target.value)}
+          placeholder="Enter podcast title..."
+          disabled={isLoading}
+        />
+        {errors.title && (
+          <p className="text-xs text-destructive">{errors.title}</p>
+        )}
+      </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => updateField('description', e.target.value)}
-              placeholder="Brief description of the podcast..."
-              rows={3}
-              disabled={isLoading}
-            />
-          </div>
+      {/* Description */}
+      <div className="space-y-2">
+        <Label htmlFor="description">
+          Description <span className="text-muted-foreground text-xs">(Optional)</span>
+        </Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => updateField('description', e.target.value)}
+          placeholder="Brief description of your podcast..."
+          rows={2}
+          disabled={isLoading}
+          className="resize-none"
+        />
+      </div>
 
-          {/* User Prompt */}
-          <div className="space-y-2">
-            <Label htmlFor="userPrompt" className="flex items-center gap-2">
-              <Lightbulb className="h-4 w-4" />
-              What would you like the podcast to be about? <span className="text-red-500">*</span>
-            </Label>
-            <div className="space-y-2">
-              <Textarea
-                id="userPrompt"
-                value={formData.userPrompt}
-                onChange={(e) => updateField('userPrompt', e.target.value)}
-                placeholder="Describe the topic, questions, or content you want the podcast to cover..."
-                rows={6}
-                className={errors.userPrompt ? 'border-red-500' : ''}
-                disabled={isLoading}
-              />
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {formData.userPrompt.length} characters
-                </p>
-                <Button
+      {/* User Prompt */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="prompt">
+            Topic/Prompt <span className="text-red-500">*</span>
+          </Label>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowExamples(!showExamples)}
+            className="text-xs h-7"
+          >
+            <Lightbulb className="h-3 w-3 mr-1" />
+            Examples
+          </Button>
+        </div>
+        <Textarea
+          id="prompt"
+          value={formData.userPrompt}
+          onChange={(e) => updateField('userPrompt', e.target.value)}
+          placeholder="What should the podcast be about? Be specific..."
+          rows={3}
+          disabled={isLoading}
+          className="resize-none"
+        />
+        {errors.userPrompt && (
+          <p className="text-xs text-destructive">{errors.userPrompt}</p>
+        )}
+        
+        {showExamples && (
+          <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+            <p className="text-xs font-medium text-muted-foreground">Click to use:</p>
+            <div className="space-y-1">
+              {PROMPT_EXAMPLES.map((example, index) => (
+                <button
+                  key={index}
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowExamples(!showExamples)}
+                  onClick={() => insertExample(example)}
+                  className="text-xs text-left p-2 hover:bg-background rounded transition-colors w-full"
                   disabled={isLoading}
                 >
-                  {showExamples ? 'Hide' : 'Show'} Examples
-                </Button>
-              </div>
-              {errors.userPrompt && (
-                <p className="text-sm text-red-500">{errors.userPrompt}</p>
-              )}
+                  {example}
+                </button>
+              ))}
             </div>
-
-            {/* Prompt Examples */}
-            {showExamples && (
-              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm font-medium text-muted-foreground">Example prompts:</p>
-                <div className="space-y-2">
-                  {PROMPT_EXAMPLES.map((example, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => insertExample(example)}
-                      className="block w-full text-left p-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-                      disabled={isLoading}
-                    >
-                      "{example}"
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+        )}
+      </div>
 
-          {/* Speakers Configuration */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Speakers ({formData.speakers.length})
-              </Label>
+      {/* Simplified Speakers Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Speakers ({formData.speakers.length})
+          </Label>
+          
+          {/* Simple dropdown to add speakers */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={addSpeaker}
                 disabled={isLoading || formData.speakers.length >= 6}
-                className="text-xs"
+                className="h-8"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add Speaker
+                <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
-            </div>
-            
-            <div className="space-y-3">
-              {formData.speakers.map((speaker, index) => (
-                <Card key={speaker.id} className="p-4 border border-border/50">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label htmlFor={`name-${speaker.id}`} className="text-xs">Name</Label>
-                          <Input
-                            id={`name-${speaker.id}`}
-                            value={speaker.name}
-                            onChange={(e) => updateSpeaker(speaker.id, 'name', e.target.value)}
-                            placeholder="Speaker name..."
-                            className="h-8 text-sm"
-                            disabled={isLoading}
-                          />
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <Label htmlFor={`role-${speaker.id}`} className="text-xs">Role (Optional)</Label>
-                          <Input
-                            id={`role-${speaker.id}`}
-                            value={speaker.role || ''}
-                            onChange={(e) => updateSpeaker(speaker.id, 'role', e.target.value)}
-                            placeholder="e.g., Host, Expert, Guest..."
-                            className="h-8 text-sm"
-                            disabled={isLoading}
-                          />
-                        </div>
-                      </div>
-                      
-                      {formData.speakers.length > 2 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeSpeaker(speaker.id)}
-                          disabled={isLoading}
-                          className="h-8 w-8 p-0 ml-2"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <Label htmlFor={`voice-${speaker.id}`} className="text-xs">Voice</Label>
-                      <Select
-                        value={speaker.voice}
-                        onValueChange={(value) => updateSpeaker(speaker.id, 'voice', value as VoiceType)}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger className="h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {VOICE_OPTIONS.map((voice) => (
-                            <SelectItem key={voice.value} value={voice.value}>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm">{voice.label}</span>
-                                <span className="text-xs text-muted-foreground">- {voice.description}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {ELEVENLABS_VOICES.map((voice) => (
+                <DropdownMenuItem
+                  key={voice.id}
+                  onClick={() => addSpeaker(voice)}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono bg-muted px-1 rounded">
+                      {voice.gender}
+                    </span>
+                    <span className="font-medium">{voice.name}</span>
                   </div>
-                </Card>
+                  <span className="text-xs text-muted-foreground">
+                    {voice.description}
+                  </span>
+                </DropdownMenuItem>
               ))}
-            </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Clean speaker list */}
+        <div className="space-y-2">
+          {formData.speakers.map((speaker) => {
+            const voice = ELEVENLABS_VOICES.find(v => v.id === speaker.id);
+            const roleOption = ROLE_OPTIONS.find(r => r.value === speaker.role);
             
-            <p className="text-xs text-muted-foreground">
-              Create a conversational podcast with multiple speakers. Each speaker will have their own voice and perspective.
-            </p>
-          </div>
+            return (
+              <div key={speaker.id} className="flex items-center gap-2 p-2 rounded-lg border bg-card">
+                {/* Role selector */}
+                <Select
+                  value={speaker.role}
+                  onValueChange={(value) => updateSpeaker(speaker.id, 'role', value)}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger className="w-[110px] h-8">
+                    <SelectValue>
+                      {roleOption && (
+                        <span className="flex items-center gap-1">
+                          <span>{roleOption.icon}</span>
+                          <span className="text-sm">{roleOption.label}</span>
+                        </span>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLE_OPTIONS.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        <span className="flex items-center gap-2">
+                          <span>{role.icon}</span>
+                          <span>{role.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Voice display */}
+                <div className="flex-1 flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{speaker.name || voice?.name || 'Unknown Voice'}</span>
+                    {voice && (
+                      <span className="text-xs text-muted-foreground">
+                        ({voice.description})
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Remove button */}
+                {formData.speakers.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeSpeaker(speaker.id)}
+                    disabled={isLoading}
+                    className="h-7 w-7 p-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        {errors.speakers && (
+          <p className="text-xs text-destructive">{errors.speakers}</p>
+        )}
+        
+        <p className="text-xs text-muted-foreground">
+          Add up to 6 speakers with different voices to create a conversational podcast.
+        </p>
+      </div>
 
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating Podcast...
-              </>
-            ) : (
-              <>
-                <Mic className="h-4 w-4 mr-2" />
-                Generate Podcast
-              </>
-            )}
-          </Button>
+      {/* Submit Button */}
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Generating Podcast...
+          </>
+        ) : (
+          <>
+            <Mic className="h-4 w-4 mr-2" />
+            Generate Podcast
+          </>
+        )}
+      </Button>
     </form>
   );
 }

@@ -14,8 +14,8 @@ export function LandingHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto px-6">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
+        <div className="relative flex h-16 items-center">
+          {/* Logo - Left aligned */}
           <Link href="/" className="flex items-center space-x-3 group">
             <img 
               src="/logo.png" 
@@ -27,8 +27,14 @@ export function LandingHeader() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          {/* Desktop Navigation - Absolutely centered */}
+          <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-8">
+            <Link 
+              href="/" 
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Home
+            </Link>
             <Link 
               href="/about" 
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -41,16 +47,10 @@ export function LandingHeader() {
             >
               Pricing
             </Link>
-            <Link 
-              href="/press" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Press
-            </Link>
           </nav>
 
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Desktop Actions - Right aligned */}
+          <div className="hidden md:flex items-center gap-4 ml-auto">
             <ThemeToggle />
             <Link href="/login">
               <Button variant="ghost" size="sm" className="text-sm">
@@ -67,7 +67,7 @@ export function LandingHeader() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2"
+            className="md:hidden p-2 ml-auto"
           >
             {mobileMenuOpen ? (
               <X className="h-5 w-5" />
@@ -82,6 +82,12 @@ export function LandingHeader() {
           <div className="md:hidden py-4 border-t border-border/50">
             <nav className="flex flex-col gap-4">
               <Link 
+                href="/" 
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Home
+              </Link>
+              <Link 
                 href="/about" 
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -92,12 +98,6 @@ export function LandingHeader() {
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Pricing
-              </Link>
-              <Link 
-                href="/press" 
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Press
               </Link>
               <div className="flex gap-3 pt-4">
                 <Link href="/login" className="flex-1">

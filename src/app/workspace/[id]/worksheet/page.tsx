@@ -43,7 +43,7 @@ export default function WorksheetPanel() {
     // generationProgress,
     createWorksheet,
     openWorksheet,
-    openEditPage,
+    // openEditPage,
     deleteWorksheet,
     refetch,
     correctAnswers,
@@ -129,7 +129,7 @@ export default function WorksheetPanel() {
               key={worksheet.id}
               worksheet={worksheet}
               onOpen={openWorksheet || (() => {})}
-              onEdit={openEditPage || (() => {})}
+              // onEdit={openEditPage || (() => {})}
               onDelete={deleteWorksheet || (() => {})}
               generatingMetadata={worksheet.generatingMetadata as unknown as GeneratingMetadata}
             />

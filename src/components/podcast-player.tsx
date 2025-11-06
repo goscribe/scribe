@@ -18,6 +18,7 @@ import {
   List,
   Disc
 } from "lucide-react";
+import { toast } from "sonner";
 
 export interface PodcastSegment {
   id: string;
@@ -363,7 +364,7 @@ export function PodcastPlayer({
           <Progress 
             value={progress} 
             className="h-2 cursor-pointer"
-            onValueChange={handleProgressChange}
+            // onValueChange={handleProgressChange}
           />
         </div>
 

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { Check, X, Sparkles } from "lucide-react";
+import { Footer } from "@/components/footer";
 
 export default function PricingPage() {
   const plans = [
@@ -13,12 +14,12 @@ export default function PricingPage() {
       description: "Perfect for trying out Scribe",
       features: [
         { text: "50 AI flashcards per month", included: true },
-        { text: "1 AI podcast per month", included: true },
+        { text: "2 AI podcasts per month", included: true },
+        { text: "5 worksheets per month", included: true },
         { text: "Basic study guides", included: true },
         { text: "1 workspace", included: true },
+        { text: "Up to 3 collaborators", included: true },
         { text: "Community support", included: true },
-        { text: "Unlimited collaborators", included: false },
-        { text: "Advanced AI features", included: false },
         { text: "Priority support", included: false },
       ],
       cta: "Get Started",
@@ -32,36 +33,36 @@ export default function PricingPage() {
       description: "For serious students",
       popular: true,
       features: [
-        { text: "Unlimited AI flashcards", included: true },
-        { text: "Unlimited AI podcasts", included: true },
+        { text: "500 AI flashcards per month", included: true },
+        { text: "20 AI podcasts per month", included: true },
+        { text: "50 worksheets per month", included: true },
         { text: "Advanced study guides", included: true },
-        { text: "Unlimited workspaces", included: true },
+        { text: "5 workspaces", included: true },
+        { text: "Up to 20 collaborators", included: true },
         { text: "Email support", included: true },
-        { text: "Up to 10 collaborators", included: true },
-        { text: "Advanced AI features", included: true },
-        { text: "Priority support", included: false },
+        { text: "Priority processing", included: true },
       ],
       cta: "Start Free Trial",
       href: "/signup",
       variant: "default" as const,
     },
     {
-      name: "Team",
+      name: "Unlimited",
       price: "$29",
       period: "/month",
-      description: "For study groups & classrooms",
+      description: "For power users & teams",
       features: [
-        { text: "Everything in Pro", included: true },
+        { text: "Everything from Pro plan", included: true },
+        { text: "Unlimited AI flashcards", included: true },
+        { text: "Unlimited AI podcasts", included: true },
+        { text: "Unlimited worksheets", included: true },
+        { text: "Unlimited study guides", included: true },
+        { text: "Unlimited workspaces", included: true },
         { text: "Unlimited collaborators", included: true },
-        { text: "Team management", included: true },
-        { text: "Shared workspaces", included: true },
-        { text: "Analytics dashboard", included: true },
-        { text: "Custom AI training", included: true },
-        { text: "API access", included: true },
-        { text: "24/7 priority support", included: true },
+        { text: "All AI features", included: true },
       ],
-      cta: "Contact Sales",
-      href: "/contact",
+      cta: "Start Free Trial",
+      href: "/signup",
       variant: "outline" as const,
     },
   ];
@@ -105,7 +106,7 @@ export default function PricingPage() {
                   <p className="text-muted-foreground mt-2">{plan.description}</p>
                 </div>
                 
-                <div className="flex items-baseline">
+                <div className="flex pb-4 items-baseline">
                   <span className="text-5xl font-bold">{plan.price}</span>
                   {plan.period && (
                     <span className="text-muted-foreground ml-2">{plan.period}</span>
@@ -182,20 +183,8 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="mt-24 text-center space-y-4">
-          <h2 className="text-3xl font-bold">
-            Ready to start learning smarter?
-          </h2>
-          <p className="text-xl text-muted-foreground">
-            Join thousands of students already using Scribe
-          </p>
-          <Link href="/signup">
-            <Button size="lg" className="text-base px-8 py-6">
-              Start Your Free Trial
-            </Button>
-          </Link>
-        </div>
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );

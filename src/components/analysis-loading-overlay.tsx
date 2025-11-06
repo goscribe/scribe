@@ -45,7 +45,7 @@ export function AnalysisLoadingOverlay({
   );
   
   // Get real-time progress
-  const { progress, percentage } = usePusherAnalysis({
+  const { progress, percentage, isAnalyzing } = usePusherAnalysis({
     workspaceId,
     enabled: isOpen,
   });
@@ -54,24 +54,10 @@ export function AnalysisLoadingOverlay({
   
   // Show initial toast notification
   useEffect(() => {
-    if (isOpen && !hasShownToast && currentProgress) {
+    if (isOpen && !hasShownToast && currentProgress && !isAnalyzing) {
       setHasShownToast(true);
     }
   }, [isOpen, hasShownToast, currentProgress]);
-  
-  // Handle completion
-  useEffect(() => {
-    if (currentProgress?.status === 'completed') {
-      toast.success('Analysis completed successfully!');
-      setTimeout(() => {
-        onClose();
-        router.refresh();
-      }, 2000);
-    } else if (currentProgress?.status === 'error') {
-      toast.error(`Analysis failed: ${currentProgress.error}`);
-      setIsMinimized(false); // Show full view on error
-    }
-  }, [currentProgress?.status, currentProgress?.error, onClose, router]);
   
   // Reset when closed
   useEffect(() => {

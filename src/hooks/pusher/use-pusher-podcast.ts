@@ -50,31 +50,15 @@ export function usePusherPodcast(workspaceId: string, onRefetch?: () => void) {
     channelRef.current = pusherRef.current.subscribe(channelName);
 
     // Podcast info event - triggers refetch
-    channelRef.current.bind(`podcast_info`, (data: PodcastInfoData) => {
-      console.log('Podcast info received:', data);
-      setState(prev => ({
-        ...prev,
-        latestPodcastInfo: data,
-      }));
-      // Refetch on info update
-      if (onRefetch) {
-        onRefetch();
-      }
+    channelRef.current.bind(`podcast_info`, () => {
+      toast.info('Podcast info event triggered');
+      onRefetch?.();
     });
 
     // Podcast complete event - triggers refetch with success message
     channelRef.current.bind(`podcast_complete`, (data: PodcastCompleteData) => {
-      console.log('Podcast completed:', data);
-      setState(prev => ({
-        ...prev,
-        lastCompleted: data,
-      }));
-      // Show success message
       toast.success(data.message || `Podcast "${data.title}" completed successfully!`);
-      // Refetch on completion
-      if (onRefetch) {
-        onRefetch();
-      }
+      onRefetch?.();
     });
 
     // Podcast error event - shows error toast

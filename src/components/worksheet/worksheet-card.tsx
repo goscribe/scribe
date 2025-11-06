@@ -41,7 +41,7 @@ interface WorksheetCardProps {
   /** Callback when worksheet is opened */
   onOpen: (worksheetId: string) => void;
   /** Callback when worksheet edit is opened */
-  onEdit: (worksheetId: string) => void;
+  // onEdit: (worksheetId: string) => void;
   /** Callback when worksheet is deleted */
   onDelete: (worksheetId: string) => void;
   /** Optional generating metadata for generating state */
@@ -64,7 +64,7 @@ interface WorksheetCardProps {
 export const WorksheetCard = ({ 
   worksheet, 
   onOpen, 
-  onEdit, 
+  // onEdit, 
   onDelete,
   generatingMetadata
 }: WorksheetCardProps) => {
@@ -251,17 +251,17 @@ export const WorksheetCard = ({
                 >
                   {completedProblems > 0 ? 'Continue' : 'Start'}
                 </Button>
-                <Button
+                {/* <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0 hover:bg-muted/50"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onEdit(worksheet.id);
+                    // onEdit(worksheet.id);
                   }}
                 >
                   <Edit3 className="h-3 w-3" />
-                </Button>
+                </Button> */}
                 <Button
                   variant="ghost"
                   size="sm"

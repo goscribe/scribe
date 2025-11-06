@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight, Users, Target, Lightbulb, Heart } from "lucide-react";
+import { Footer } from "@/components/footer";
 
 export default function AboutPage() {
   return (
@@ -40,8 +41,8 @@ export default function AboutPage() {
               </p>
               <p>
                 Today, Scribe helps over 10,000 students worldwide study more effectively, 
-                retain information better, and achieve their academic goals. We're backed by 
-                Y Combinator and a team of advisors from leading education and technology companies.
+                retain information better, and achieve their academic goals. Our team is dedicated 
+                to continuously improving the platform based on student feedback and the latest AI advances.
               </p>
             </div>
           </div>
@@ -153,32 +154,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Investors Section */}
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-6">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl font-bold">Backed by the Best</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Trusted by leading investors in education and technology
-            </p>
-          </div>
-          
-          <div className="flex flex-wrap justify-center items-center gap-12">
-            <div className="text-2xl font-bold text-muted-foreground">
-              Y Combinator
-            </div>
-            <div className="text-2xl font-bold text-muted-foreground">
-              Sequoia Capital
-            </div>
-            <div className="text-2xl font-bold text-muted-foreground">
-              OpenAI Fund
-            </div>
-            <div className="text-2xl font-bold text-muted-foreground">
-              Founders Fund
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className="py-24">
@@ -198,19 +173,22 @@ export default function AboutPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/careers">
+              <Link href="/pricing">
                 <Button 
                   variant="outline" 
                   size="lg" 
                   className="text-base px-8 py-6 border-2"
                 >
-                  View Open Positions
+                  View Pricing
                 </Button>
               </Link>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

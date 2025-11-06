@@ -109,7 +109,7 @@ export const useFlashcards = (workspaceId: string) => {
         onGenerationError: (error) => {
           toast.error(`Generation failed: ${error}`);
         },
-        onFlashcardInfoComplete: (data) => {
+        onFlashcardInfoComplete: () => {
           refetch();
           refetchIsGenerating();
         },

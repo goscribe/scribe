@@ -425,7 +425,7 @@ export function VirtualPodcastPlayer({
           <Progress 
             value={progress} 
             className="h-2 cursor-pointer"
-            onValueChange={handleProgressChange}
+            // onValueChange={handleProgressChange}
           />
         </div>
 
