@@ -15,6 +15,8 @@ interface PodcastCardGridProps {
   onPodcastClick: (podcastId: string) => void;
   /** Callback when play button is clicked */
   onPlayClick: (e: React.MouseEvent, podcastId: string) => void;
+  /** Callback when delete button is clicked */
+  onDelete?: (podcastId: string) => void;
   /** Format duration helper function */
   formatDuration: (seconds: number) => string;
   /** Maximum number of podcasts to display (default: 4) */
@@ -37,6 +39,7 @@ export const PodcastCardGrid = ({
   podcasts,
   onPodcastClick,
   onPlayClick,
+  onDelete,
   formatDuration,
   maxItems = 4
 }: PodcastCardGridProps) => {
@@ -50,6 +53,7 @@ export const PodcastCardGrid = ({
           podcast={podcast}
           onClick={onPodcastClick}
           onPlayClick={onPlayClick}
+          onDelete={onDelete}
           formatDuration={formatDuration}
           variant="grid"
         />

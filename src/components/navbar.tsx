@@ -122,7 +122,7 @@ export const Navbar = ({ onNewClick, onCreateFile, onCreateFolder }: NavbarProps
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background">
       <div className="flex h-14 items-center justify-between px-6">
         {/* Logo */}
-        <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => router.push("/dashboard")}>
+        <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => router.push("/storage")}>
           <img src="/logo.png" alt="Scribe Logo" className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
           <span className="text-lg font-bold text-foreground">
             scribe

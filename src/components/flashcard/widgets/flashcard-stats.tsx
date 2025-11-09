@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, AlertTriangle, Lightbulb } from "lucide-react";
 
 interface FlashcardStatsProps {
     timesStudied: number;
@@ -11,11 +11,11 @@ interface FlashcardStatsProps {
     
 export const FlashcardStats = ({ timesStudied, masteryLevel, consecutiveIncorrect, currentCardIndex, totalCards }: FlashcardStatsProps) => {
     const getMasteryColor = (level: number) => {
-        if (level >= 80) return "bg-green-500";
-        if (level >= 60) return "bg-blue-500";
-        if (level >= 40) return "bg-yellow-500";
-        if (level >= 20) return "bg-orange-500";
-        return "bg-red-500";
+        if (level >= 80) return "bg-green-500 dark:bg-green-600";
+        if (level >= 60) return "bg-blue-500 dark:bg-blue-600";
+        if (level >= 40) return "bg-yellow-500 dark:bg-yellow-600";
+        if (level >= 20) return "bg-orange-500 dark:bg-orange-600";
+        return "bg-red-500 dark:bg-red-600";
     };
 
     const getMasteryLabel = (level: number) => {
@@ -41,7 +41,7 @@ export const FlashcardStats = ({ timesStudied, masteryLevel, consecutiveIncorrec
           <div className="flex items-center gap-2">
             {timesStudied > 0 && (
               <>
-                <Badge variant="secondary" className="flex gap-2 items-center bg-gray-100 text-gray-700 border-gray-200">
+                <Badge variant="secondary" className="flex gap-2 items-center">
                     <TrendingUp className="h-3 w-3 text-muted-foreground" />
                     <span className="text-xs font-medium text-muted-foreground">
                       {timesStudied} {timesStudied === 1 ? 'study' : 'studies'}
@@ -60,7 +60,6 @@ export const FlashcardStats = ({ timesStudied, masteryLevel, consecutiveIncorrec
             {timesStudied == 0 && (
               <Badge 
                 variant="secondary"
-                className="bg-gray-100 text-gray-700 border-gray-200"
               >
                 Unseen
               </Badge>
@@ -70,19 +69,24 @@ export const FlashcardStats = ({ timesStudied, masteryLevel, consecutiveIncorrec
             {consecutiveIncorrect > 0 && (
               <Badge 
                 variant="secondary"
-                className={`
-                  ${consecutiveIncorrect >= 3 
-                    ? 'bg-slate-100 text-slate-700 border-slate-200' 
-                    : consecutiveIncorrect === 2
-                    ? 'bg-gray-100 text-gray-700 border-gray-200'
-                    : 'bg-zinc-100 text-zinc-700 border-zinc-200'}
-                `}
+                className="flex gap-1.5 items-center text-muted-foreground"
               >
-                {consecutiveIncorrect >= 3 
-                  ? `⚠️ ${consecutiveIncorrect} misses`
-                  : consecutiveIncorrect === 2
-                  ? `⚠️ 2 misses`
-                  : '💡 1 miss'}
+                {consecutiveIncorrect >= 3 ? (
+                  <>
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>{consecutiveIncorrect} misses</span>
+                  </>
+                ) : consecutiveIncorrect === 2 ? (
+                  <>
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>2 misses</span>
+                  </>
+                ) : (
+                  <>
+                    <Lightbulb className="h-3 w-3" />
+                    <span>1 miss</span>
+                  </>
+                )}
               </Badge>
             )}
           </div>

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { RouterOutputs } from "@goscribe/server";
 import { cn } from "@/lib/utils";
+import FlashcardDotsIndicator from "./widgets/flashcard-dots-indicator";
 
 type Flashcard = RouterOutputs['flashcards']['listCards'][number];
 
@@ -106,15 +107,10 @@ export const FlashcardDetailSheet = ({
       <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col" hideClose={true}>
         <SheetTitle className="sr-only">Flashcard Details</SheetTitle>
         <div className="px-6 py-5 border-b-2 border-border/50 bg-muted/20">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-primary" />
-              </div>
-              <div>
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
                 <h2 className="text-lg font-semibold">Flashcard Details</h2>
                 <p className="text-xs text-muted-foreground">View and edit your flashcard</p>
-              </div>
             </div>
             <div className="flex items-center gap-1">
               {isEditing ? (
@@ -233,7 +229,6 @@ export const FlashcardDetailSheet = ({
               <Card className="border border-border/50 bg-muted/5">
                 <div className="px-4 py-3">
                   <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="h-4 w-4 text-muted-foreground" />
                     <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Progress</span>
                   </div>
                   
@@ -241,7 +236,7 @@ export const FlashcardDetailSheet = ({
                     {/* Mastery Level */}
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Mastery Level</span>
-                      <div className="flex items-center gap-2">
+                      {/* <div className="flex items-center gap-2">
                         <div className="flex gap-0.5">
                           {[1, 2, 3, 4, 5].map((level) => (
                             <div
@@ -262,7 +257,8 @@ export const FlashcardDetailSheet = ({
                         <span className="text-xs text-muted-foreground">
                           {selectedCard.progress[0].masteryLevel || 0}/5
                         </span>
-                      </div>
+                      </div> */}
+                      <FlashcardDotsIndicator masteryLevel={selectedCard.progress[0].masteryLevel || 0} timesStudied={selectedCard.progress[0].timesStudied || 0} consecutiveIncorrect={selectedCard.progress[0].timesIncorrectConsecutive || 0} />
                     </div>
                     
                     {/* Times Studied */}
@@ -291,7 +287,6 @@ export const FlashcardDetailSheet = ({
             <Card className="border border-border/50 bg-muted/5">
               <div className="px-4 py-3">
                 <div className="flex items-center gap-2 mb-4">
-                  <Hash className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">Information</span>
                 </div>
                 

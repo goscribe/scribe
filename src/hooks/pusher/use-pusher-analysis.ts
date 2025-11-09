@@ -72,7 +72,7 @@ export function usePusherAnalysis({
   }, [workspaceId, enabled, pusher, handleProgressUpdate]);
 
   const calculateProgress = useCallback((progress: AnalysisProgress | null): number => {
-    if (!progress) return 0;
+    if (!progress || !progress.steps) return 0;
     
     const steps = Object.values(progress.steps);
     const completed = steps.filter(s => s.status === 'completed').length;

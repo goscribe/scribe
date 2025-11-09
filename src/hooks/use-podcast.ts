@@ -33,10 +33,8 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [audioElements, setAudioElements] = useState<HTMLAudioElement[]>([]);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
-  const [isRegenerateDialogOpen, setIsRegenerateDialogOpen] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // tRPC queries and mutations
   const { data: episode, isLoading, error, refetch } = trpc.podcast.getEpisode.useQuery({ 
@@ -47,7 +45,6 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
 
   const deleteEpisodeMutation = trpc.podcast.deleteEpisode.useMutation();
   const updateEpisodeMutation = trpc.podcast.updateEpisode.useMutation();
-  const regenerateSegmentMutation = trpc.podcast.regenerateSegment.useMutation();
   const deleteSegmentMutation = trpc.podcast.deleteSegment.useMutation();
 
   // Real-time podcast events
@@ -131,32 +128,6 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
     }
   };
 
-  /**
-   * Handles segment regeneration
-   */
-  const handleSegmentRegenerate = async (segmentId: string, prompt: string) => {
-    try {
-      setIsRegenerating(true);
-      
-      await regenerateSegmentMutation.mutateAsync({
-        episodeId: podcastId,
-        segmentId,
-        prompt
-      });
-      
-      toast.success("Segment regeneration started");
-      
-      // Refresh the episode data
-      await refetch();
-      
-    } catch (error) {
-      console.error("Failed to regenerate segment:", error);
-      toast.error("Failed to regenerate segment");
-      throw error;
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
 
 
   /**
@@ -294,19 +265,15 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
     playingSegment,
     currentTime,
     isRenameDialogOpen,
-    isRegenerateDialogOpen,
     selectedSegment,
     isRenaming,
-    isRegenerating,
     
     // Actions
     setIsBookmarked,
     setIsRenameDialogOpen,
-    setIsRegenerateDialogOpen,
     setSelectedSegment,
     handleSegmentPlayPause,
     handleRenamePodcast,
-    handleSegmentRegenerate,
     handleDownloadSegment,
     handleDeleteSegment,
     handleDeleteEpisode,

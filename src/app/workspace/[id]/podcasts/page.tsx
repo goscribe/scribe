@@ -161,6 +161,7 @@ export default function PodcastsPanel() {
                 podcasts={filteredEpisodes}
                 onPodcastClick={openPodcast}
                 onPlayClick={handlePlayClick}
+                onDelete={deletePodcast}
                 formatDuration={formatDuration}
                 maxItems={4}
               />
@@ -177,6 +178,7 @@ export default function PodcastsPanel() {
                 podcasts={filteredEpisodes}
                 onPodcastClick={openPodcast}
                 onPlayClick={handlePlayClick}
+                onDelete={deletePodcast}
                 formatDuration={formatDuration}
                 startIndex={searchQuery.trim() ? 0 : 4}
               />

@@ -6,10 +6,13 @@ import { RouterOutputs } from '@goscribe/server';
 type Channel = RouterOutputs['chat']['getChannels'][number];
 type ChatMessage = RouterOutputs['chat']['getChannel']['chats'][number];
 
-interface ChatEventHandlers {
+interface WorkspaceEventHandlers {
   onNewChannel?: (channel: Channel) => void;
   onChannelEdit?: (channel: Channel) => void;
   onChannelDelete?: (channelId: string) => void;
+}
+
+interface ChannelEventHandlers {
   onNewMessage?: (message: ChatMessage) => void;
   onMessageEdit?: (message: ChatMessage) => void;
   onMessageDelete?: (messageId: string) => void;
@@ -19,7 +22,8 @@ export function usePusherChat(workspaceId: string) {
   const [isConnected, setIsConnected] = useState(false);
   const pusherRef = useRef<Pusher | null>(null);
   const channelsRef = useRef<Map<string, PusherChannel>>(new Map());
-  const eventHandlersRef = useRef<ChatEventHandlers>({});
+  const workspaceHandlersRef = useRef<WorkspaceEventHandlers>({});
+  const channelHandlersRef = useRef<Map<string, ChannelEventHandlers>>(new Map());
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -44,13 +48,29 @@ export function usePusherChat(workspaceId: string) {
       toast.error('Chat realtime connection error');
     });
 
+    workspaceChannel.bind('new_channel', (data: Channel) => {
+      workspaceHandlersRef.current.onNewChannel?.(data);
+    });
+
+    workspaceChannel.bind('edit_channel', (data: Channel) => {
+      workspaceHandlersRef.current.onChannelEdit?.(data);
+    });
+
+    workspaceChannel.bind('delete_channel', (data: { channelId: string }) => {
+      workspaceHandlersRef.current.onChannelDelete?.(data.channelId);
+    });
+
     return () => {
       // Clean up all channel subscriptions
-      channelsRef.current.forEach((channel) => {
+      const channels = channelsRef.current;
+      const channelHandlers = channelHandlersRef.current;
+      
+      channels.forEach((channel) => {
         channel.unbind_all();
         pusher.unsubscribe(channel.name);
       });
-      channelsRef.current.clear();
+      channels.clear();
+      channelHandlers.clear();
       
       // Clean up workspace channel
       workspaceChannel.unbind_all();
@@ -63,67 +83,64 @@ export function usePusherChat(workspaceId: string) {
     };
   }, [workspaceId]);
 
-  const subscribeToChannel = (workspaceId: string, channelId: string, handlers: ChatEventHandlers) => {
-    if (!workspaceId || !channelId) return;
+  const setWorkspaceHandlers = (handlers: WorkspaceEventHandlers) => {
+    workspaceHandlersRef.current = handlers;
+  };
 
-    eventHandlersRef.current = handlers;
+  const subscribeToChannel = (channelId: string | null, handlers: ChannelEventHandlers) => {
+    if (!pusherRef.current || !channelId) return;
+
+    const channelName = channelId;
     
-    // Subscribe to individual channel events
-    if (pusherRef.current) {
-      // Subscribe to channel-specific events
-      const channelName = `channel_${channelId}`;
+    // Store handlers for this channel
+    channelHandlersRef.current.set(channelName, handlers);
+    
+    // Subscribe to channel if not already subscribed
+    if (!channelsRef.current.has(channelName)) {
+      const channel = pusherRef.current.subscribe(channelName);
+      channelsRef.current.set(channelName, channel);
       
-      if (!channelsRef.current.has(channelName)) {
-        const channel = pusherRef.current.subscribe(channelName);
-        channelsRef.current.set(channelName, channel);
+      // Bind message events
+      channel.bind('new_message', (data: ChatMessage) => {
+        const channelHandlers = channelHandlersRef.current.get(channelName);
+        channelHandlers?.onNewMessage?.(data);
+      });
 
-        // Channel events
-        channel.bind(`${workspaceId}_channel_new`, (data: any) => {
-          eventHandlersRef.current.onNewChannel?.(data);
-        });
+      channel.bind('edit_message', (data: ChatMessage) => {
+        const channelHandlers = channelHandlersRef.current.get(channelName);
+        channelHandlers?.onMessageEdit?.(data);
+      });
 
-        channel.bind(`${workspaceId}_channel_edit`, (data: any) => {
-          eventHandlersRef.current.onChannelEdit?.(data);
-        });
-
-        channel.bind(`${workspaceId}_channel_delete`, (data: any) => {
-          eventHandlersRef.current.onChannelDelete?.(data.channelId);
-        });
-
-        // Message events
-        channel.bind(`${workspaceId}_message_new`, (data: any) => {
-          eventHandlersRef.current.onNewMessage?.(data);
-        });
-
-        channel.bind(`${workspaceId}_message_edit`, (data: any) => {
-          eventHandlersRef.current.onMessageEdit?.(data);
-        });
-
-        channel.bind(`${workspaceId}_message_delete`, (data: any) => {
-          eventHandlersRef.current.onMessageDelete?.(data.chatId);
-        });
+      channel.bind('delete_message', (data: ChatMessage) => {
+        const channelHandlers = channelHandlersRef.current.get(channelName);
+        channelHandlers?.onMessageDelete?.(data.id);
+      });
+    } else {
+      // Update handlers for already subscribed channel
+      const channelHandlers = channelHandlersRef.current.get(channelName);
+      if (channelHandlers) {
+        channelHandlersRef.current.set(channelName, handlers);
       }
     }
   };
 
   const unsubscribeFromChannel = (channelId: string) => {
-    eventHandlersRef.current = {};
+    if (!pusherRef.current) return;
     
-    // Clean up channel subscriptions
-    if (pusherRef.current) {
-      const channelName = `channel_${channelId}`;
-      const channel = channelsRef.current.get(channelName);
-      
-      if (channel) {
-        channel.unbind_all();
-        pusherRef.current.unsubscribe(channelName);
-        channelsRef.current.delete(channelName);
-      }
+    const channelName = `channel_${channelId}`;
+    const channel = channelsRef.current.get(channelName);
+    
+    if (channel) {
+      channel.unbind_all();
+      pusherRef.current.unsubscribe(channelName);
+      channelsRef.current.delete(channelName);
+      channelHandlersRef.current.delete(channelName);
     }
   };
 
   return {
     isConnected,
+    setWorkspaceHandlers,
     subscribeToChannel,
     unsubscribeFromChannel,
   };

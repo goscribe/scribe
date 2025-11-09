@@ -277,7 +277,7 @@ export default function StudyGuidePanel() {
     return (
         <div className="h-[calc(100vh-4rem)] relative flex flex-col">
             {/* Study Button at Top */}
-            <div className="absolute top-4 right-4 z-10">
+            {/* <div className="absolute top-4 right-4 z-10">
                             <Button
                                 size="sm"
                                 variant="outline"
@@ -288,7 +288,7 @@ export default function StudyGuidePanel() {
                     <BookOpen className="h-4 w-4 mr-2" />
                     Study
                             </Button>
-            </div>
+            </div> */}
 
             {/* Editor - Full Height */}
             <div className="h-full overflow-y-auto">

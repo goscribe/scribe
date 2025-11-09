@@ -50,9 +50,8 @@ export default function WorksheetPanel() {
     incorrectAnswers
   } = useWorksheet(workspaceId);
 
-  // Check if any worksheet is generating and get generating metadata
-  const generatingWorksheet = worksheets?.find((w) => w.generating === true);
-
+  console.log('correctAnswers', correctAnswers);
+  console.log('incorrectAnswers', incorrectAnswers);
 
   // // Loading state
   if (isLoading) {

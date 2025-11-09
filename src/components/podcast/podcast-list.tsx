@@ -15,6 +15,8 @@ interface PodcastListProps {
   onPodcastClick: (podcastId: string) => void;
   /** Callback when play button is clicked */
   onPlayClick: (e: React.MouseEvent, podcastId: string) => void;
+  /** Callback when delete button is clicked */
+  onDelete?: (podcastId: string) => void;
   /** Format duration helper function */
   formatDuration: (seconds: number) => string;
   /** Starting index for podcasts to display (for pagination) */
@@ -37,6 +39,7 @@ export const PodcastList = ({
   podcasts,
   onPodcastClick,
   onPlayClick,
+  onDelete,
   formatDuration,
   startIndex = 0
 }: PodcastListProps) => {
@@ -50,6 +53,7 @@ export const PodcastList = ({
           podcast={podcast}
           onClick={onPodcastClick}
           onPlayClick={onPlayClick}
+          onDelete={onDelete}
           formatDuration={formatDuration}
           variant="list"
         />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Shuffle, Edit3, Trash2, Sparkles, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Shuffle, Edit3, Trash2, Sparkles, TrendingUp, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { RouterOutputs } from "@goscribe/server";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { FlashcardStats } from "./widgets/flashcard-stats";
+import { useParams, useRouter } from "next/navigation";
 
 type Flashcard = RouterOutputs['flashcards']['listCards'][number];
 
@@ -24,11 +25,14 @@ export const FlashcardCardOverview = ({
 }: FlashcardCardOverviewProps) => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isCardFlipped, setIsCardFlipped] = useState(false);
+  const router = useRouter();
 
+  const params = useParams();
+  const workspaceId = params.id as string;
   // Keyboard shortcuts
   useEffect(() => {
     if (cards.length === 0) return;
-    
+
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
         setCurrentCardIndex(prev => Math.max(0, prev - 1));
@@ -48,7 +52,7 @@ export const FlashcardCardOverview = ({
 
 
   console.log("card flipped outside", isCardFlipped);
-  
+
   const goToNextCard = () => {
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
@@ -84,7 +88,7 @@ export const FlashcardCardOverview = ({
 
   const currentCard = cards[currentCardIndex];
   const progressPercentage = ((currentCardIndex + 1) / cards.length) * 100;
-  
+
   // Get current card's progress
   const cardProgress = currentCard?.progress[0];
   const masteryLevel = cardProgress?.masteryLevel || 0;
@@ -94,15 +98,34 @@ export const FlashcardCardOverview = ({
   return (
     <div className="flex flex-col items-center space-y-6 py-4">
       <div className="w-full max-w-3xl">
-        <FlashcardStats timesStudied={timesStudied} masteryLevel={masteryLevel} consecutiveIncorrect={consecutiveIncorrect} currentCardIndex={currentCardIndex} totalCards={cards.length} />        
+        <FlashcardStats timesStudied={timesStudied} masteryLevel={masteryLevel} consecutiveIncorrect={consecutiveIncorrect} currentCardIndex={currentCardIndex} totalCards={cards.length} />
       </div>
       {/* Progress Bar */}
       <div className="w-full max-w-3xl">
         <Progress value={progressPercentage} className="h-2" />
       </div>
 
+      <Card className="w-full max-w-3xl">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Study Mode</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Practice with spaced repetition</p>
+            </div>
+            <Button 
+              variant="default"
+              className="flex items-center gap-2"
+              onClick={() => router.push(`/workspace/${workspaceId}/flashcards/learn`)}
+            >
+              <BookOpen className="w-4 h-4" />
+              Start Learning
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Flip Card */}
-      <div 
+      <div
         className="w-full max-w-3xl cursor-pointer"
         style={{ perspective: '1000px' }}
         onClick={toggleCardFlip}
@@ -111,15 +134,15 @@ export const FlashcardCardOverview = ({
           relative transition-transform duration-500
           ${isCardFlipped ? '[transform:rotateY(180deg)]' : ''}
         `}
-        style={{ transformStyle: 'preserve-3d' }}>
+          style={{ transformStyle: 'preserve-3d' }}>
           {/* Front */}
-          <Card className="border-2 shadow-lg hover:shadow-xl transition-shadow"
+          <Card className="shadow-lg hover:shadow-xl transition-shadow"
             style={{ backfaceVisibility: 'hidden' }}
           >
             <CardContent className="p-16 flex flex-col justify-center items-center min-h-[400px]">
               <div className="text-center w-full space-y-4">
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-xs font-semibold text-muted-foreground tracking-wider">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Question
                   </span>
                 </div>
@@ -127,7 +150,6 @@ export const FlashcardCardOverview = ({
                   {currentCard.front}
                 </h2>
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Sparkles className="h-4 w-4" />
                   <span>Click or press Space to reveal</span>
                 </div>
               </div>
@@ -135,13 +157,13 @@ export const FlashcardCardOverview = ({
           </Card>
 
           {/* Back */}
-          <Card className="absolute inset-0 border-2 shadow-lg border-gray-300 [transform:rotateY(180deg)]"
+          <Card className="absolute inset-0 shadow-lg [transform:rotateY(180deg)]"
             style={{ backfaceVisibility: 'hidden' }}
           >
             <CardContent className="p-16 flex flex-col justify-center items-center min-h-[400px]">
               <div className="text-center w-full space-y-4">
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-xs font-semibold text-muted-foreground tracking-wider">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Answer
                   </span>
                 </div>
@@ -149,11 +171,10 @@ export const FlashcardCardOverview = ({
                   {currentCard.back}
                 </h2>
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Sparkles className="h-4 w-4" />
                   <span>Click or press Space to reveal</span>
                 </div>
               </div>
-              
+
             </CardContent>
           </Card>
         </div>
@@ -191,7 +212,7 @@ export const FlashcardCardOverview = ({
           </Button>
         </div>
 
-        <Button 
+        <Button
           variant="outline"
           size="lg"
           onClick={goToNextCard}

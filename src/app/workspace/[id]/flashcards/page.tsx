@@ -162,39 +162,6 @@ export default function FlashcardsPanel() {
         generatingMetadata={generatingMetadata || null}
       />
 
-      {/* Action Bar */}
-      {cards.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="default"
-            size="sm"
-            className="gap-2"
-            onClick={() => router.push(`/workspace/${workspaceId}/flashcards/learn`)}
-          >
-            <Brain className="w-4 h-4" />
-            Learn
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => {/* TODO: Implement play mode */}}
-          >
-            <Play className="w-4 h-4" />
-            Play
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => {/* TODO: Implement test mode */}}
-          >
-            <ClipboardCheck className="w-4 h-4" />
-            Test
-          </Button>
-        </div>
-      )}
-
       {/* Search Bar for List View */}
       {viewMode === "list" && cards.length > 0 && (
         <FlashcardSearch

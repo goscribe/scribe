@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { RouterOutputs } from "@goscribe/server";
 import { useWorksheet } from "@/hooks/use-worksheet";
+import { Skeleton } from "../ui/skeleton";
 
 type Worksheet = RouterOutputs['worksheets']['get'];
 
@@ -41,7 +42,6 @@ interface WorksheetCardProps {
   /** Callback when worksheet is opened */
   onOpen: (worksheetId: string) => void;
   /** Callback when worksheet edit is opened */
-  // onEdit: (worksheetId: string) => void;
   /** Callback when worksheet is deleted */
   onDelete: (worksheetId: string) => void;
   /** Optional generating metadata for generating state */
@@ -64,7 +64,6 @@ interface WorksheetCardProps {
 export const WorksheetCard = ({ 
   worksheet, 
   onOpen, 
-  // onEdit, 
   onDelete,
   generatingMetadata
 }: WorksheetCardProps) => {
@@ -72,7 +71,7 @@ export const WorksheetCard = ({
   
   const workspaceId = worksheet.workspaceId;
 
-  const { correctAnswers, incorrectAnswers } = useWorksheet(workspaceId, worksheet.id);
+  const { correctAnswers, incorrectAnswers, isLoading } = useWorksheet(workspaceId, worksheet.id);
   
   // Check if worksheet is generating (assuming worksheet has a generating field)
   const isGenerating = worksheet.generating === true;
@@ -190,8 +189,12 @@ export const WorksheetCard = ({
                           )}
                         />
                       ))} */}
-
-                      {worksheet.questions.map((question: Worksheet['questions'][number]) => (
+                      {isLoading && (
+                        <>
+                          <Skeleton className="h-2 w-10 rounded-full bg-muted-foreground/20 border border-border" />
+                        </>
+                      )}
+                      {!isLoading && worksheet.questions.map((question: Worksheet['questions'][number]) => (
                         <div key={question.id}>
                           {correctAnswers?.has(question.id) && (
                             <div className="h-2 w-2 rounded-full bg-green-500" />
@@ -210,9 +213,16 @@ export const WorksheetCard = ({
                       )}
                     </div>
                   </div>
+                  {isLoading && (
+                       <span className="text-xs font-medium flex items-center gap-1">
+                       <Skeleton className="h-2 w-2 rounded-full bg-muted-foreground/20 border border-border" />/{totalProblems}
+                     </span>
+                  )}
+                  {!isLoading && (
                   <span className="text-xs font-medium">
-                    {completedProblems}/{totalProblems}
-                  </span>
+                      {completedProblems}/{totalProblems}
+                    </span>
+                  )}
                 </div>
                 <Progress value={progressPercentage} className="h-1.5" />
               </div>
@@ -251,17 +261,6 @@ export const WorksheetCard = ({
                 >
                   {completedProblems > 0 ? 'Continue' : 'Start'}
                 </Button>
-                {/* <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 hover:bg-muted/50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // onEdit(worksheet.id);
-                  }}
-                >
-                  <Edit3 className="h-3 w-3" />
-                </Button> */}
                 <Button
                   variant="ghost"
                   size="sm"

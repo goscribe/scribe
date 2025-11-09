@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { ArrowLeft, Play, Pause, Clock, Calendar, Mic2, Zap, Download, Share2, MoreVertical } from "lucide-react";
+import { ArrowLeft, Play, Pause, Clock, Calendar, Mic2, Zap, Download, Share2, MoreVertical, Pencil, Trash2, Info  } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,9 @@ import { SegmentRegenerateDialog } from "@/components/podcast/segment-regenerate
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { usePodcast } from "@/hooks/use-podcast";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { format } from "date-fns";
+
 
 /**
  * Redesigned podcast detail page - cleaner, more focused UX
@@ -33,16 +36,12 @@ export default function PodcastDetailPage() {
     playingSegment,
     currentTime,
     isRenameDialogOpen,
-    isRegenerateDialogOpen,
     selectedSegment,
     isRenaming,
-    isRegenerating,
     setIsRenameDialogOpen,
-    setIsRegenerateDialogOpen,
     setSelectedSegment,
     handleSegmentPlayPause,
     handleRenamePodcast,
-    handleSegmentRegenerate,
     handleDownloadSegment,
     handleDeleteEpisode,
   } = usePodcast(workspaceId, podcastId);
@@ -143,11 +142,8 @@ export default function PodcastDetailPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setIsRenameDialogOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
               Edit Details
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Download className="h-4 w-4 mr-2" />
@@ -158,7 +154,8 @@ export default function PodcastDetailPage() {
               className="text-destructive"
               onClick={handleDeleteEpisode}
             >
-              Delete Podcast
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -321,7 +318,7 @@ export default function PodcastDetailPage() {
                         </div>
 
                         {/* Actions - Show on Hover */}
-                        <DropdownMenu>
+                        {/* <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
@@ -353,7 +350,7 @@ export default function PodcastDetailPage() {
                               Download
                             </DropdownMenuItem>
                           </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu> */}
                       </div>
                     </div>
                   ))}
@@ -369,38 +366,37 @@ export default function PodcastDetailPage() {
           <Card>
             <CardContent className="p-6 space-y-4">
               <h3 className="font-semibold mb-4">Episode Details</h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total Duration</p>
-                    <p className="font-medium">{formatDurationLong(totalDuration)}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                    <Mic2 className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Voice</p>
-                    <p className="font-medium capitalize">{episode.metadata?.voice || 'Nova'}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-                    <Zap className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Speed</p>
-                    <p className="font-medium">{episode.metadata?.speed || 1.0}x</p>
-                  </div>
-                </div>
+              {episode.imageUrl && (
+                <Image 
+                  src={episode.imageUrl} 
+                  alt={episode.title} 
+                  width={400} 
+                  height={400} 
+                  className="w-full h-auto rounded-lg object-cover"
+                  unoptimized 
+                />
+              )}
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{formatDuration(totalDuration)}</span>
               </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{format(new Date(episode.metadata?.generatedAt), 'MMM d, yyyy') || 'No date available'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{episode.metadata?.description || 'No description available'}</span>
+              </div>
+              <Separator />
+              <h4 className="text-sm font-semibold mb-2">Speakers ({episode.metadata?.speakers.length})</h4>
+                  {episode.metadata?.speakers.map((speaker) => (
+                    <div className="flex items-center gap-2" key={speaker.id}>
+                      <Image src={'https://api.dicebear.com/9.x/open-peeps/svg?seed=' + speaker.name} alt={speaker.name || ''} width={20} height={20} unoptimized />
+                      <span className="text-sm font-medium">{speaker.name}</span>
+                      <Badge variant="secondary" className="text-xs">{speaker.role}</Badge>
+                    </div>
+                  ))}
             </CardContent>
           </Card>
 
@@ -502,13 +498,13 @@ export default function PodcastDetailPage() {
         isRenaming={isRenaming}
       />
 
-      <SegmentRegenerateDialog
+      {/* <SegmentRegenerateDialog
         isOpen={isRegenerateDialogOpen}
         onOpenChange={setIsRegenerateDialogOpen}
         segment={selectedSegment}
         onRegenerate={handleSegmentRegenerate}
         isRegenerating={isRegenerating}
-      />
+      /> */}
     </div>
   );
 }

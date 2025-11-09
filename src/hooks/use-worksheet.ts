@@ -260,6 +260,7 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
     }
   }, [worksheet, progressData]);
 
+
   /**
    * Creates a new worksheet with sample problems
    */
@@ -492,8 +493,6 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
       isDeleting: deleteMutation.isPending,
       /** Whether worksheet generation is in progress */
       isGenerating,
-      /** Generation progress percentage */
-      // generationProgress,
       /** Function to create a new worksheet */
       createWorksheet,
       /** Function to open a worksheet */

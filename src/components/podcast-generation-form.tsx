@@ -8,12 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Loader2, 
-  Mic, 
   Lightbulb, 
   Plus, 
   X, 
   Users,
-  ChevronDown 
+  ChevronDown,
+  Mic,
+  User,
+  Brain
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Image from "next/image";
 
 export type SpeakerRole = 'host' | 'guest' | 'expert';
 
@@ -44,22 +47,22 @@ interface PodcastGenerationFormProps {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'host', label: 'Host', icon: '🎙️' },
-  { value: 'guest', label: 'Guest', icon: '👤' },
-  { value: 'expert', label: 'Expert', icon: '🎓' },
+  { value: 'host', label: 'Host', icon: <Mic className="h-4 w-4" /> },
+  { value: 'guest', label: 'Guest', icon: <User className="h-4 w-4" /> },
+  { value: 'expert', label: 'Expert', icon: <Brain className="h-4 w-4" /> },
 ];
 
 // ElevenLabs Voice IDs - Popular voices
 const ELEVENLABS_VOICES = [
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', description: 'Calm & warm', gender: 'F' },
-  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', description: 'Strong & confident', gender: 'F' },
-  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', description: 'Soft & friendly', gender: 'F' },
-  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', description: 'Well-rounded', gender: 'M' },
-  { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', description: 'Young & energetic', gender: 'F' },
-  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', description: 'Deep & narrative', gender: 'M' },
-  { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', description: 'Crisp & mature', gender: 'M' },
-  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', description: 'Professional', gender: 'M' },
-  { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', description: 'Young & casual', gender: 'M' },
+  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', description: 'Calm & warm', gender: 'F', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=rachel' },
+  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', description: 'Strong & confident', gender: 'F', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=domi' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', description: 'Soft & friendly', gender: 'F', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=bella' },
+  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', description: 'Well-rounded', gender: 'M', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=antoni' },
+  { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', description: 'Young & energetic', gender: 'F', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=elli' },
+  { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', description: 'Deep & narrative', gender: 'M', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=josh' },
+  { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', description: 'Crisp & mature', gender: 'M', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=arnold' },
+  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', description: 'Professional', gender: 'M', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=adam' },
+  { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', description: 'Young & casual', gender: 'M', image: 'https://api.dicebear.com/9.x/open-peeps/svg?seed=sam' },
 ];
 
 const PROMPT_EXAMPLES = [
@@ -271,7 +274,7 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
                 <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-60">
               {ELEVENLABS_VOICES.map((voice) => (
                 <DropdownMenuItem
                   key={voice.id}
@@ -279,10 +282,11 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center gap-2">
+                    <Image src={voice.image} alt={voice.name} width={20} height={20} unoptimized />
+                    <span className="font-medium">{voice.name}</span>
                     <span className="text-xs font-mono bg-muted px-1 rounded">
                       {voice.gender}
                     </span>
-                    <span className="font-medium">{voice.name}</span>
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {voice.description}
@@ -301,7 +305,19 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
             
             return (
               <div key={speaker.id} className="flex items-center gap-2 p-2 rounded-lg border bg-card">
-                {/* Role selector */}
+
+                {/* Voice display */}
+                <div className="flex-1 flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <Image src={voice?.image || ''} alt={voice?.name || ''} width={20} height={20} unoptimized />
+                    <span className="text-sm font-medium">{speaker.name || voice?.name || 'Unknown Voice'}</span>
+                    {voice && (
+                      <span className="text-xs text-muted-foreground">
+                        ({voice.description})
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <Select
                   value={speaker.role}
                   onValueChange={(value) => updateSpeaker(speaker.id, 'role', value)}
@@ -329,17 +345,6 @@ export function PodcastGenerationForm({ onSubmit, isLoading = false, defaultValu
                   </SelectContent>
                 </Select>
                 
-                {/* Voice display */}
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{speaker.name || voice?.name || 'Unknown Voice'}</span>
-                    {voice && (
-                      <span className="text-xs text-muted-foreground">
-                        ({voice.description})
-                      </span>
-                    )}
-                  </div>
-                </div>
                 
                 {/* Remove button */}
                 {formData.speakers.length > 1 && (

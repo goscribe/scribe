@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { IconSidebar } from "@/components/icon-sidebar";
 import { LandingHeader } from "@/components/landing-header";
+import { ScribeLoader } from "@/components/branding/scribe-loader";
 
 const PUBLIC_PATHS = ["/", "/landing", "/about", "/pricing", "/press", "/login", "/signup"];
 
@@ -25,7 +26,7 @@ export function ConditionalNav({ children }: { children: React.ReactNode }) {
   if (isLoading && shouldCheckSession && !isPublicPage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <ScribeLoader />
       </div>
     );
   }
@@ -45,8 +46,8 @@ export function ConditionalNav({ children }: { children: React.ReactNode }) {
     return (
       <>
         <Navbar />
-        <IconSidebar />
-        <div className="pl-14">
+        {/* <IconSidebar /> */}
+        <div>
           {children}
         </div>
       </>

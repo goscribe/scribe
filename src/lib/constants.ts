@@ -92,7 +92,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   SIGNUP: '/signup',
-  DASHBOARD: '/dashboard',
+  STORAGE: '/storage',
   WORKSPACE: (id: string) => `/workspace/${id}`,
   WORKSHEET: (workspaceId: string, worksheetId: string) =>
     `/workspace/${workspaceId}/worksheet/${worksheetId}`,

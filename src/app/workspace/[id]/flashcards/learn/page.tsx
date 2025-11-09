@@ -14,7 +14,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { FlashcardStats } from "@/components/flashcard/widgets/flashcard-stats";
 
-type Flashcard = RouterOutputs['flashcards']['listCards'][number];
+type Flashcard = RouterOutputs['flashcards']['getDueFlashcards'][number];
 
 /**
  * ADDING NEW QUESTION MODES:
@@ -54,7 +54,10 @@ export default function FlashcardLearnPage() {
   const workspaceId = params.id as string;
 
   // @todo: replace with dynamically fetched chosen cards from backend.
-  const { cards, isLoading } = useFlashcards(workspaceId);
+  // const { cards, isLoading } = useFlashcards(workspaceId);
+  const { data: cards = [], isLoading } = trpc.flashcards.getDueFlashcards.useQuery({
+    workspaceId,
+  });
   
   // Get flashcard set ID from cards
   const flashcardSetId = cards[0]?.artifactId;
@@ -64,7 +67,6 @@ export default function FlashcardLearnPage() {
     { artifactId: flashcardSetId || '' },
     { enabled: !!flashcardSetId }
   );
-  
   // Progress tracking mutation - refetch immediately after success
   const recordAttemptMutation = trpc.flashcards.recordStudyAttempt.useMutation({
     onSuccess: async () => {
@@ -90,6 +92,7 @@ export default function FlashcardLearnPage() {
     timeSpentMs: number;
   }>>([]);
 
+
   /**
    * Initialize cards with random modes
    */
@@ -99,7 +102,6 @@ export default function FlashcardLearnPage() {
     // Available modes for random assignment
     const availableModes: QuestionMode[] = ["mcq", "type"];
     // Future modes can be added here: "true-false", "matching", "fill-blank"
-
     const cardsWithRandomModes: CardWithMode[] = cards.map((card) => ({
       ...card,
       mode: availableModes[Math.floor(Math.random() * availableModes.length)]
@@ -110,7 +112,16 @@ export default function FlashcardLearnPage() {
 
   const currentCard = cardsWithModes[currentIndex];
   const progress = ((currentIndex + (showFeedback ? 1 : 0)) / cardsWithModes.length) * 100;
-  
+
+  // @todo: figure out how to record session at the end of the study session
+  // useEffect(() => {
+  //   if (progress >= 100) {
+  //     recordSessionMutation.mutate({
+  //       attempts: studyAttempts,
+  //     });
+  //   }
+  // }, [progress]);
+
   // Get current card's progress from database
   const currentCardProgress = progressData?.find(p => p.flashcardId === currentCard?.id)?.progress;
   const consecutiveWrong = currentCardProgress?.timesIncorrectConsecutive || 0;

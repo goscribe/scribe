@@ -1,10 +1,22 @@
 "use client";
 
-import { Play, Music, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Play, Music, Loader2, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RouterOutputs } from "@goscribe/server";
+import Image from "next/image";
 
 type PodcastEpisode = RouterOutputs['podcast']['listEpisodes'][number];
 
@@ -18,6 +30,8 @@ interface PodcastCardProps {
   onClick: (podcastId: string) => void;
   /** Callback when play button is clicked */
   onPlayClick: (e: React.MouseEvent, podcastId: string) => void;
+  /** Callback when delete button is clicked */
+  onDelete?: (podcastId: string) => void;
   /** Format duration helper function */
   formatDuration: (seconds: number) => string;
   /** Card variant - 'grid' for featured view, 'list' for episodes list */
@@ -40,26 +54,57 @@ export const PodcastCard = ({
   podcast,
   onClick,
   onPlayClick,
+  onDelete,
   formatDuration,
   variant = 'grid'
 }: PodcastCardProps) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (onDelete) {
+      onDelete(podcast.id);
+    }
+    setShowDeleteDialog(false);
+  };
+
   if (variant === 'list') {
     return (
+      <>
       <Card 
-        className="group cursor-pointer border border-border/50 hover:shadow-sm transition-all"
+        className="group hover:shadow-sm transition-all relative"
         onClick={() => onClick(podcast.id)}
       >
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             {/* Small album art */}
+            
             <div className="relative w-12 h-12 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 rounded-lg overflow-hidden flex-shrink-0">
-              <div className="absolute inset-0 flex items-center justify-center">
-                {podcast.generating ? (
-                  <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
-                ) : (
-                  <Music className="w-4 h-4 text-muted-foreground/60" />
-                )}
-              </div>
+            {
+              podcast.imageUrl ? (
+                <Image 
+                  src={podcast.imageUrl} 
+                  alt={podcast.title} 
+                  width={48} 
+                  height={48} 
+                  className="w-full h-full object-cover"
+                  unoptimized 
+                />
+              )
+            : null}
+              {(!podcast.imageUrl) && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {podcast.generating ? (
+                    <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                  ) : (
+                    <Music className="w-4 h-4 text-muted-foreground/60" />
+                  )}
+                </div>
+              )}
               {/* Play button overlay - only show if not generating */}
               {!podcast.generating && (
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -87,16 +132,28 @@ export const PodcastCard = ({
                       : podcast.description || 'AI-generated podcast episode'}
                   </p>
                 </div>
-                {podcast.generating ? (
-                  <Badge variant="outline" className="text-[10px] bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20 flex-shrink-0 flex items-center gap-1">
-                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                    Generating
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 flex-shrink-0">
-                    Ready
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {podcast.generating ? (
+                    <Badge variant="outline" className="text-[10px] bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20 flex items-center gap-1">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      Generating
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">
+                      Ready
+                    </Badge>
+                  )}
+                  {onDelete && !podcast.generating && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={handleDeleteClick}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
               
               {/* Metadata */}
@@ -115,27 +172,64 @@ export const PodcastCard = ({
           </div>
         </CardContent>
       </Card>
-    );
+
+      {/* Delete Confirmation Dialog */}
+      {onDelete && (
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Podcast</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete &quot;{podcast.title}&quot;? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
+  );
   }
 
   // Grid variant (default)
   return (
-    <Card 
-      className="group cursor-pointer border border-border/50 hover:shadow-md transition-all duration-200 h-[300px] flex flex-col"
-      onClick={() => onClick(podcast.id)}
-    >
+    <>
+      <Card 
+        className="group cursor-pointer border border-border/50 hover:shadow-md transition-all duration-200 h-[300px] flex flex-col relative"
+        onClick={() => onClick(podcast.id)}
+      >
       <CardContent className="p-0 flex flex-col h-full">
         {/* Album Art Placeholder */}
         <div className="relative h-[160px] shrink-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 rounded-t-lg overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              {podcast.generating ? (
-                <Loader2 className="w-6 h-6 text-muted-foreground/60 animate-spin" />
-              ) : (
-                <Music className="w-6 h-6 text-muted-foreground/60" />
-              )}
+          {podcast.imageUrl ? (
+            <Image 
+              src={podcast.imageUrl} 
+              alt={podcast.title} 
+              width={320} 
+              height={160} 
+              className="w-full h-full object-cover"
+              unoptimized 
+            />
+          ) : null}
+          {(!podcast.imageUrl || podcast.generating) && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                {podcast.generating ? (
+                  <Loader2 className="w-6 h-6 text-muted-foreground/60 animate-spin" />
+                ) : (
+                  <Music className="w-6 h-6 text-muted-foreground/60" />
+                )}
+              </div>
             </div>
-          </div>
+          )}
           {/* Play button overlay - only show if not generating */}
           {!podcast.generating && (
             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -183,7 +277,45 @@ export const PodcastCard = ({
           </div>
         </div>
       </CardContent>
+      
+      {/* Delete button overlay for grid variant */}
+      {onDelete && !podcast.generating && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 bg-background/90 backdrop-blur-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            onClick={handleDeleteClick}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </Card>
+
+    {/* Delete Confirmation Dialog */}
+    {onDelete && (
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Podcast</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{podcast.title}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
+  </>
   );
 };
 
