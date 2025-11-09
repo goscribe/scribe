@@ -9,9 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { EditorJSBlock } from "@editorjs/editorjs";
 
 interface StudySection {
   id: string;
@@ -50,7 +48,16 @@ export default function StudyModePage() {
       if (content.blocks) {
         let currentSection: StudySection | null = null;
         
-        content.blocks.forEach((block: EditorJSBlock) => {
+        content.blocks.forEach((block: {
+          type: string;
+          data: {
+            text: string;
+            level: number;
+            items: string[];
+            code: string;
+          };
+          id: string;
+        }) => {
           if (block.type === 'header' && block.data.level <= 2) {
             // Start a new section
             if (currentSection) {
