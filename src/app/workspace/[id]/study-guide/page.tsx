@@ -28,7 +28,6 @@ import Header from "@editorjs/header";
 import List from "@editorjs/list";
 import Quote from "@editorjs/quote";
 import CodeTool from "@editorjs/code";
-import LinkTool from "@editorjs/link";
 import ImageTool from "@editorjs/image";
 import "./page.css";
 import { trpc } from "@/lib/trpc";
@@ -168,12 +167,12 @@ export default function StudyGuidePanel() {
                     },
                 },
                 code: CodeTool,
-                linkTool: {
-                    class: LinkTool,
-                    config: {
-                        endpoint: '/api/link', // You'll need to implement this endpoint
-                    }
-                },
+                // linkTool: {
+                //     class: LinkTool,
+                //     config: {
+                //         endpoint: '/api/link', // You'll need to implement this endpoint
+                //     }
+                // },
                 image: {
                     class: ImageTool,
                     config: {
