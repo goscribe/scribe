@@ -14,6 +14,7 @@ import { MoreHorizontal, Edit, Trash2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RouterOutputs } from '@goscribe/server';
 import { useSession } from '@/lib/useSession';
+import ProfilePicture from "../profilePicture";
 
 type ChatMessage = RouterOutputs['chat']['getChannel']['chats'][number];
 
@@ -104,17 +105,6 @@ export function MessageItem({
       .slice(0, 2);
   };
 
-  const getUserProfilePicture = () => {
-    if (profilePicture) {
-      return profilePicture;
-    }
-    if (message.user?.image) {
-      return message.user.image;
-    }
-    return '';
-  };
-
-  const userProfilePicture = getUserProfilePicture();
   const isOwnMessage = message.userId === session?.user?.id;
 
   return (
@@ -129,12 +119,7 @@ export function MessageItem({
           "flex-shrink-0",
           !showHeader && "invisible"
         )}>
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={userProfilePicture} alt={message.user?.name || 'Unknown'} />
-            <AvatarFallback className="text-xs bg-muted">
-              {getInitials(message.user?.name || 'UK')}
-            </AvatarFallback>
-          </Avatar>
+          <ProfilePicture id={message.userId || ''} name={message.user?.name || 'Unknown'} />
         </div>
       )}
 
