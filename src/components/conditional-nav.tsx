@@ -2,9 +2,9 @@
 
 import { useSession } from "@/lib/useSession";
 import { usePathname } from "next/navigation";
-import { Navbar } from "@/components/navbar";
-import { IconSidebar } from "@/components/icon-sidebar";
-import { LandingHeader } from "@/components/landing-header";
+import { Navbar } from "@/components/navigation/navbar";
+import { IconSidebar } from "@/components/navigation/icon-sidebar";
+import { LandingHeader } from "@/components/navigation/landing-header";
 import { ScribeLoader } from "@/components/branding/scribe-loader";
 
 const PUBLIC_PATHS = ["/", "/landing", "/about", "/pricing", "/press", "/login", "/signup"];

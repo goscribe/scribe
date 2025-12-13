@@ -3,7 +3,7 @@
 import { useSession } from "@/lib/useSession";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import LandingPage from "./landing/page";
+import LandingPage from "./(marketing)/landing/page";
 
 export default function Home() {
   const { data: session, isLoading, error } = useSession();

@@ -65,8 +65,7 @@ export const PodcastsPageHeader = ({
           disabled={isCreating}
           onClick={onCreateClick}
         >
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          New Podcast
+          {isCreating ? "Generating..." : "New Podcast"}
         </Button>
       </div>
 

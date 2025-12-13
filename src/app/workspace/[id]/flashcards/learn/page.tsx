@@ -32,9 +32,9 @@ type Flashcard = RouterOutputs['flashcards']['getDueFlashcards'][number];
 // Question mode types - easily extensible for future modes
 type QuestionMode = "mcq" | "type" | "true-false" | "matching" | "fill-blank";
 
-interface CardWithMode extends Flashcard {
+type CardWithMode = Flashcard & {
   mode: QuestionMode;
-}
+};
 
 /**
  * Flashcard learning mode component

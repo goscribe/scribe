@@ -18,25 +18,7 @@ import { DashboardSearch } from "@/components/dashboard/dashboard-search";
 import { DashboardFoldersSection } from "@/components/dashboard/dashboard-folders-section";
 import { DashboardFilesSection } from "@/components/dashboard/dashboard-files-section";
 import { formatBytes } from "@/lib/audio-validation";
-
-interface FileItem {
-  id: string;
-  name: string;
-  type: "file" | "folder";
-  lastModified: string;
-  size?: string;
-  isStarred?: boolean;
-  sharedWith?: string[];
-  icon?: string;
-}
-
-interface FolderItem {
-  id: string;
-  name: string;
-  itemCount: number;
-  lastModified: string;
-  color?: string;
-}
+import { FileItem, FolderItem, transformFileInformation, transformFolderInformation } from "@/lib/storage/transformFileFolderInfo";
 
 /**
  * Dashboard page component for managing workspaces and folders
@@ -53,44 +35,13 @@ interface FolderItem {
 export default function DashboardPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [newFolderColor, setNewFolderColor] = useState("#6366f1");
-  const [editingFolder, setEditingFolder] = useState<{ id: string; name: string; color?: string } | null>(null);
-  const [deletingFolder, setDeletingFolder] = useState<{ id: string; name: string } | null>(null);
   
   const { data: session, isLoading: sessionLoading } = useSession();
   const router = useRouter();
 
-
-  const { data: workspaceStats, isLoading: workspaceStatsLoading, error: workspaceStatsError } = trpc.workspace.getStats.useQuery();
+  const { data: workspaceStats, isLoading: workspaceStatsLoading, refetch: refetchWorkspaceStats, error: workspaceStatsError } = trpc.workspace.getStats.useQuery();
   // Fetch workspace data from TRPC
-  const { data: workspaces, isLoading: workspacesLoading, error: workspacesError } = trpc.workspace.list.useQuery({});
-  
-  // Folder mutations
-  const utils = trpc.useUtils();
-  const createFolderMutation = trpc.workspace.createFolder?.useMutation({
-    onSuccess: () => {
-      utils.workspace.list.invalidate();
-      setShowCreateDialog(false);
-      setNewFolderName("");
-      setNewFolderColor("#6366f1"); // Reset to default color
-    },
-  });
-  
-  const updateFolderMutation = trpc.workspace.updateFolder?.useMutation({
-    onSuccess: () => {
-      utils.workspace.list.invalidate();
-      setEditingFolder(null);
-    },
-  });
-  
-  const deleteFolderMutation = trpc.workspace.deleteFolder?.useMutation({
-    onSuccess: () => {
-      utils.workspace.list.invalidate();
-      setDeletingFolder(null);
-    },
-  });
+  const { data: workspaces, isLoading: workspacesLoading, refetch: refetchWorkspaces, error: workspacesError } = trpc.workspace.list.useQuery({});
 
   /**
    * Handles folder click navigation
@@ -108,88 +59,10 @@ export default function DashboardPage() {
     router.push(`/workspace/${fileId}`);
   };
 
-  /**
-   * Creates a new folder
-   */
-  const handleCreateFolder = () => {
-    if (newFolderName.trim()) {
-      if (createFolderMutation) {
-        createFolderMutation.mutate({ 
-          name: newFolderName.trim(),
-          color: newFolderColor 
-        });
-      }
-    }
-  };
-  
-  /**
-   * Initiates folder rename
-   * @param folderId - The ID of the folder to rename
-   * @param folderName - The current name of the folder
-   */
-  const handleRenameFolder = (folderId: string, folderName: string) => {
-    const folder = folders.find(f => f.id === folderId);
-    setEditingFolder({ 
-      id: folderId, 
-      name: folderName, 
-      color: folder?.color || "#6366f1" 
-    });
-  };
-  
-  /**
-   * Saves the folder rename
-   */
-  const handleSaveRename = () => {
-    if (editingFolder && editingFolder.name.trim()) {
-      if (updateFolderMutation) {
-        updateFolderMutation.mutate({ 
-          id: editingFolder.id, 
-          name: editingFolder.name.trim(),
-          color: editingFolder.color 
-        });
-      }
-    }
-  };
-  
-  /**
-   * Initiates folder deletion
-   * @param folderId - The ID of the folder to delete
-   * @param folderName - The name of the folder to delete
-   */
-  const handleDeleteFolder = (folderId: string, folderName: string) => {
-    setDeletingFolder({ id: folderId, name: folderName });
-  };
-  
-  /**
-   * Confirms folder deletion
-   */
-  const confirmDeleteFolder = () => {
-    if (deletingFolder) {
-      if (deleteFolderMutation) {
-        deleteFolderMutation.mutate({ id: deletingFolder.id });
-      }
-    }
-  };
-
   // Simple data transformation with normal types
-  const folders: FolderItem[] = workspaces?.folders?.map(folder => ({
-    id: folder.id,
-    name: folder.name || "Untitled Folder",
-    itemCount: 0, // You can fetch this separately if needed
-    lastModified: folder.updatedAt ? new Date(folder.updatedAt).toLocaleDateString() : "Unknown",
-    color: folder.color || "#6366f1", // Use folder's hex color or default to indigo
-  })) || [];
+  const folders: FolderItem[] = workspaces?.folders?.map(folder => transformFolderInformation(folder)) || [];
 
-  const files: FileItem[] = workspaces?.workspaces?.map(workspace => ({
-    id: workspace.id,
-    name: workspace.title || "Untitled File",
-    type: "file",
-    lastModified: workspace.updatedAt ? new Date(workspace.updatedAt).toLocaleDateString() : "Unknown",
-    size: "Unknown", // You can fetch this separately if needed
-    isStarred: false, // You can fetch this separately if needed
-    sharedWith: [], // You can fetch this separately if needed
-    icon: workspace.icon, // Emoji icon from workspace data
-  })) || [];
+  const files: FileItem[] = workspaces?.workspaces?.map(workspace => transformFileInformation(workspace)) || [];
 
   const filteredFolders = folders.filter(folder =>
     folder.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -247,7 +120,7 @@ export default function DashboardPage() {
       label: "Storage",
       value: workspaceStats?.spaceUsed ? formatBytes(workspaceStats.spaceUsed) : "Unknown",
       icon: BarChart3,
-      extra: <div className="flex flex-col gap-2"><Progress value={workspaceStats?.spaceUsed ? (workspaceStats.spaceUsed / (workspaceStats.spaceUsed + workspaceStats.spaceLeft)) * 100 : 0} className="h-1.5 mt-2" /> <span className="text-xs text-muted-foreground">{workspaceStats?.spaceUsed ? formatBytes(workspaceStats.spaceUsed) + " / " + formatBytes(workspaceStats.spaceLeft) : "Unknown"}</span></div>,
+      extra: <div className="flex flex-col gap-2"><Progress value={workspaceStats?.spaceUsed ? (workspaceStats.spaceUsed / (workspaceStats.spaceTotal)) * 100 : 0} className="h-1.5 mt-2" /> <span className="text-xs text-muted-foreground">{workspaceStats?.spaceUsed ? formatBytes(workspaceStats.spaceUsed) + " / " + formatBytes(workspaceStats.spaceTotal) : "Unknown"}</span></div>,
     },
     {
       label: "Updated",
@@ -276,22 +149,7 @@ export default function DashboardPage() {
       <DashboardFoldersSection
         folders={filteredFolders}
         viewMode={viewMode}
-        showCreateDialog={showCreateDialog}
-        onToggleCreateDialog={setShowCreateDialog}
-        newFolderName={newFolderName}
-        onNewFolderNameChange={setNewFolderName}
-        newFolderColor={newFolderColor}
-        onNewFolderColorChange={setNewFolderColor}
-        onCreateFolder={handleCreateFolder}
         onFolderClick={handleFolderClick}
-        onRenameFolder={handleRenameFolder}
-        onDeleteFolder={handleDeleteFolder}
-        editingFolder={editingFolder}
-        onEditingFolderChange={setEditingFolder}
-        onSaveRename={handleSaveRename}
-        deletingFolder={deletingFolder}
-        onDeletingFolderChange={setDeletingFolder}
-        onConfirmDelete={confirmDeleteFolder}
       />
 
       {/* Files Section */}

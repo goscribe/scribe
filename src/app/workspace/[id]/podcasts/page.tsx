@@ -5,8 +5,7 @@ import { useParams } from "next/navigation";
 import { Headphones } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { PodcastGenerationForm, PodcastGenerationForm as PodcastGenerationFormType } from "@/components/podcast-generation-form";
-import { Progress } from "@/components/ui/progress";
+import { PodcastGenerationForm, PodcastGenerationForm as PodcastGenerationFormType } from "@/components/podcast/podcast-generation-form";
 import { PodcastsPageHeader } from "@/components/podcast/podcasts-page-header";
 import { PodcastCardGrid } from "@/components/podcast/podcast-card-grid";
 import { PodcastList } from "@/components/podcast/podcast-list";
@@ -109,6 +108,7 @@ export default function PodcastsPanel() {
       <PodcastsPageHeader
         episodeCount={podcastEpisodes.length}
         onCreateClick={() => setShowGenerationForm(true)}
+        // @todo
         isCreating={isGenerating}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

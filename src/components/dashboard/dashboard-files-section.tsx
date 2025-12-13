@@ -1,23 +1,15 @@
 "use client";
 
-import { FileText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { FileText, Plus } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
-import { FileCard, FileListItem } from "@/components/ui/storage";
-
-/**
- * Props for file items
- */
-interface FileItem {
-  id: string;
-  name: string;
-  type: "file" | "folder";
-  lastModified: string;
-  size?: string;
-  isStarred?: boolean;
-  sharedWith?: string[];
-  icon?: string;
-}
+import { FileCard } from "./widgets/file-card";
+import { FileListItem } from "./widgets/file-list-item";
+import { Button } from "../ui/button";
+import { useState } from "react";
+import CreateWorkspaceModal from "@/components/modals/create-file-modal";
+import { trpc } from "@/lib/trpc";
+import { FileItem } from "@/lib/storage/transformFileFolderInfo";
+import DeletionConfirmationModal from "../modals/deletion-confirmation-modal";
 
 /**
  * Props for the DashboardFilesSection component
@@ -36,9 +28,7 @@ interface DashboardFilesSectionProps {
  * 
  * Features:
  * - Grid and list view modes
- * - File count badge
  * - Empty state when no files
- * - File icons and metadata
  * 
  * @param props - DashboardFilesSectionProps
  * @returns JSX element containing the files section
@@ -46,16 +36,36 @@ interface DashboardFilesSectionProps {
 export const DashboardFilesSection = ({
   files,
   viewMode,
-  onFileClick
+  onFileClick,
 }: DashboardFilesSectionProps) => {
+  const [isOpenNewWorkspaceModal, setIsOpenNewWorkspaceModal] = useState(false);
+
+  const utils = trpc.useUtils();
+
+  const [deletingWorkspace, setDeletingWorkspace] = useState<FileItem | null>(null);
+
+  const deleteWorkspaceMutation = trpc.workspace.delete?.useMutation({
+    onSuccess: () => {
+      utils.workspace.list.invalidate();
+      setDeletingWorkspace(null);
+    },
+  });
+
+  const handleDeleteFile = () => {
+    if (deletingWorkspace && deleteWorkspaceMutation) {
+      deleteWorkspaceMutation.mutate({ id: deletingWorkspace.id });
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-medium">Files</h2>
         <div className="flex items-center space-x-2">
-          <Badge variant="secondary" className="text-xs">
-            {files.length} files
-          </Badge>
+          <Button size="sm" variant="outline" className="h-8" onClick={() => setIsOpenNewWorkspaceModal(true)}>
+              <Plus className="h-3.5 w-3.5 mr-2" />
+              New Workspace
+            </Button>
         </div>
       </div>
       
@@ -65,8 +75,8 @@ export const DashboardFilesSection = ({
           title="No files yet"
           description="Upload or create your first file to get started"
           action={{
-            label: "Upload Files",
-            onClick: () => console.log("Upload files")
+            label: "New File",
+            onClick: () => setIsOpenNewWorkspaceModal(true)
           }}
         />
       ) : viewMode === "grid" ? (
@@ -75,10 +85,12 @@ export const DashboardFilesSection = ({
             <FileCard
               key={file.id}
               id={file.id}
+              type={file.type}
               name={file.name}
-              icon={file.icon}
+              color={file.color}
               lastModified={file.lastModified}
               onClick={onFileClick}
+              onDelete={(id) => setDeletingWorkspace(files.find(f => f.id === id) || null)}
             />
           ))}
         </div>
@@ -89,12 +101,29 @@ export const DashboardFilesSection = ({
               key={file.id}
               id={file.id}
               name={file.name}
-              icon={file.icon}
+              color={file.color}
+              type={file.type}
+              lastModified={file.lastModified}
               onClick={onFileClick}
+              onDelete={(id) => setDeletingWorkspace(files.find(f => f.id === id) || null)}
             />
           ))}
         </div>
       )}
+      <CreateWorkspaceModal
+        isOpen={isOpenNewWorkspaceModal}
+        setIsOpen={setIsOpenNewWorkspaceModal}
+        onSuccess={() => {
+          utils.workspace.list.invalidate();
+        }}
+      />
+      <DeletionConfirmationModal
+        isOpen={deletingWorkspace !== null}
+        setIsOpen={(open) => setDeletingWorkspace(open ? deletingWorkspace : null)}
+        onConfirm={handleDeleteFile}
+        type="File"
+        specificName={deletingWorkspace?.name || ""}
+      />
     </div>
   );
 };

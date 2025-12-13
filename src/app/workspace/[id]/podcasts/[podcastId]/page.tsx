@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { ArrowLeft, Play, Pause, Clock, Calendar, Mic2, Zap, Download, Share2, MoreVertical, Pencil, Trash2, Info  } from "lucide-react";
+import { Play, Pause, Clock, Calendar, Download, MoreVertical, Pencil, Trash2, Info  } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,6 @@ import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PodcastRenameDialog } from "@/components/podcast/podcast-rename-dialog";
-import { SegmentRegenerateDialog } from "@/components/podcast/segment-regenerate-dialog";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { usePodcast } from "@/hooks/use-podcast";
 import { useRouter } from "next/navigation";

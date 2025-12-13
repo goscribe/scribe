@@ -2,7 +2,7 @@
 
 import { Plus, Brain, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ViewModeToggle } from "@/components/ui/storage";
+import { ViewModeToggle } from "@/components/dashboard/widgets/view-mode-toggle";
 import { Badge } from "@/components/ui/badge";
 
 /**

@@ -1,6 +1,7 @@
 "use client";
 
-import { StorageSearch, ViewModeToggle } from "@/components/ui/storage";
+import { StorageSearch } from "./widgets/storage-search";
+import { ViewModeToggle } from "./widgets/view-mode-toggle";
 
 /**
  * Props for the DashboardSearch component

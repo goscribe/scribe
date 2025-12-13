@@ -81,7 +81,7 @@ export const WorkspaceSettingsForm = ({
     <div className="space-y-8">
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Icon Selection */}
-        <div className="space-y-3">
+        {/* <div className="space-y-3">
           <Label className="text-sm font-medium">Icon</Label>
           <div className="flex items-center gap-4">
             <WorkspaceIconPicker
@@ -93,7 +93,7 @@ export const WorkspaceSettingsForm = ({
               Choose an icon to represent your workspace
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Name Input */}
         <div className="space-y-3">

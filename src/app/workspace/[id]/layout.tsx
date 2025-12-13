@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { AnalysisLoadingOverlay } from "@/components/analysis-loading-overlay";
+import { AnalysisLoadingOverlay } from "@/components/workspace/analysis-loading-overlay";
 import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
 import { SidebarToggle } from "@/components/workspace/sidebar-toggle";
 import { useFileUpload } from "@/hooks/use-file-upload";

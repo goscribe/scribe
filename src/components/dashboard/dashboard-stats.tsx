@@ -1,8 +1,7 @@
 "use client";
 
 import { LucideIcon } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { StatCard } from "@/components/ui/storage";
+import { StatCard } from "./widgets/stat-card";
 
 /**
  * Props for individual stat items

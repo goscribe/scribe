@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Upload, FileText, Image, Volume2, ChevronRight } from 'lucide-react';
+import { Upload, FileText, Image, Volume2, ChevronRight, Download } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,8 @@ interface FilesSectionProps {
   isUploading: boolean;
   /** Callback function when upload button is clicked */
   onUploadClick: () => void;
+  /** Callback function when download button is clicked */
+  // onDownload: (fileId: string, fileName: string) => void;
 }
 
 /**
@@ -41,7 +43,7 @@ interface FilesSectionProps {
  * @param props - FilesSectionProps
  * @returns JSX element containing the files section
  */
-export const FilesSection = ({ files, isUploading, onUploadClick }: FilesSectionProps) => {
+export const FilesSection = ({ files, isUploading, onUploadClick, /*onDownload*/ }: FilesSectionProps) => {
   const [isFilesOpen, setIsFilesOpen] = useState(true);
 
   /**
@@ -107,7 +109,7 @@ export const FilesSection = ({ files, isUploading, onUploadClick }: FilesSection
                   const FileIcon = getFileIcon(file.mimeType);
                   
                   return (
-                    <button
+                    <div
                       key={file.id}
                       className="w-full flex items-center gap-2 px-2 py-1 rounded-sm text-left transition-colors hover:bg-muted/50 group"
                     >
@@ -117,7 +119,18 @@ export const FilesSection = ({ files, isUploading, onUploadClick }: FilesSection
                           {file.name}
                         </div>
                       </div>
-                    </button>
+                      {/* <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onDownload(file.id, file.name);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-muted rounded-sm"
+                        title="Download file"
+                      >
+                        <Download className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                      </button> */}
+                    </div>
                   );
                 })}
                 {files.length > 10 && (
