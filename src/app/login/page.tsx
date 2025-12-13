@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/workspace");
+      router.push("/storage");
     }
   }, [status, router]);
 

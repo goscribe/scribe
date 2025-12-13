@@ -88,10 +88,10 @@ export const MemberHeader = ({
           variant="outline" 
           className={
             currentUserRole === "owner" 
-              ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+              ? "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/20"
               : currentUserRole === "admin"
-              ? "bg-blue-50 text-blue-700 border-blue-200"
-              : "bg-gray-50 text-gray-700 border-gray-200"
+              ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20"
+              : "bg-gray-50 dark:bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-500/20"
           }
         >
           {currentUserRole}

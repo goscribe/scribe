@@ -29,12 +29,6 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const [isConnected, setIsConnected] = useState(true); // This would come from Pusher hook
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
@@ -79,7 +73,6 @@ export function ChatInterface({
           onEditMessage={handleEditMessage}
           onDeleteMessage={handleDeleteMessage}
         />
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Message Input */}

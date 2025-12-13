@@ -49,12 +49,10 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   const activeTab = pathname.split('/').pop() as WorkspaceTab;
 
-  const { progress, isAnalyzing } = usePusherAnalysis({
+  const { isAnalyzing } = usePusherAnalysis({
     workspaceId: id as string,
     enabled: true,
   });
-
-  const [analysisOverlayOpen, setAnalysisOverlayOpen] = useState(false);
   
   const { 
     isUploading, 
@@ -79,7 +77,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   return (
     <div 
-      className="flex h-[calc(100vh-3rem)]"
+      className="flex ml-16 h-[calc(100vh-3rem)]"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -126,7 +124,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
         workspaceId={id as string}
         isOpen={isAnalyzing || false}
         onClose={() => {
-          setAnalysisOverlayOpen(false);
+          // Overlay handles its own state via Pusher
         }}
       />
     </div>

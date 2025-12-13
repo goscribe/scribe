@@ -65,7 +65,7 @@ export interface WorksheetQuestionMeta {
   completed?: boolean;
   userAnswer?: string;
   completedAt?: Date | null;
-  mark_scheme?: MarkScheme;
+  markScheme?: MarkScheme;
   userMarkScheme?: UserMarkScheme; // Merged from progress
 }
 

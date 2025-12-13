@@ -28,6 +28,7 @@ export function MessageList({
 }: MessageListProps) {
   const [groupedMessages, setGroupedMessages] = useState<GroupedMessages[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
 
   // Group messages by date
@@ -57,6 +58,24 @@ export function MessageList({
 
     setGroupedMessages(grouped);
   }, [messages]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    // Use requestAnimationFrame to ensure DOM is updated
+    requestAnimationFrame(() => {
+      if (scrollAreaRef.current) {
+        // Find the viewport element inside the ScrollArea
+        const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+        if (viewport) {
+          // Scroll to bottom smoothly
+          viewport.scrollTo({
+            top: viewport.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }
+    });
+  }, [messages, groupedMessages]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -136,6 +155,7 @@ export function MessageList({
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
     </ScrollArea>
   );

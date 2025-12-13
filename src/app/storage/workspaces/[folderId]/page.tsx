@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Upload, Grid3X3, List, Search } from "lucide-react";
+import { Upload, Grid3X3, List, Search, FolderClosed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { useSession } from "@/lib/useSession";
 import { trpc } from "@/lib/trpc";
 import { useRouter, useParams } from "next/navigation";
 import { 
@@ -13,6 +12,7 @@ import {
   FileCard, 
   FolderListItem, 
   FileListItem,
+  StorageBreadcrumb,
 } from "@/components/ui/storage";
 
 interface FileItem {
@@ -52,11 +52,10 @@ interface FolderInfo {
 export default function WorkspacesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [folderInfo, setFolderInfo] = useState<FolderInfo | null>(null);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [folders, setFolders] = useState<FileItem[]>([]);
-  const { data: session } = useSession();
+  const [breadcrumbItems, setBreadcrumbItems] = useState<Array<{ id: string; name: string; color?: string }>>([]);
   const router = useRouter();
   const params = useParams();
   const folderId = params.folderId as string;
@@ -71,26 +70,28 @@ export default function WorkspacesPage() {
     ? trpc.workspace.getFolderInformation.useQuery({ id: folderId }, { enabled: !!folderId })
     : ({ data: undefined } as never);
 
+  // Build breadcrumb path from current folder
   useEffect(() => {
-    if (workspaces && folderDetails) {
-      const { folderInfo, files, folders } = transformFolderData();
-      
-      setFolderInfo(folderInfo);
-      setFiles(files);
-      setFolders(folders);
+    if (!folderDetails?.folder) {
+      setBreadcrumbItems([]);
+      return;
     }
-  }, [workspaces, folderDetails, folderId]);
 
-  if (!folderDetails && !folderDetailsLoading) {
-    return <div>Folder not found</div>;
-  }
+    // For now, just show current folder in breadcrumb
+    // Full hierarchy would require fetching parent folders recursively
+    // which is better done server-side or with a dedicated API endpoint
+    setBreadcrumbItems([{
+      id: folderDetails.folder.id,
+      name: folderDetails.folder.name,
+      color: folderDetails.folder.color,
+    }]);
+  }, [folderDetails, folderId]);
 
-  // Simple data transformation with normal types
-  const transformFolderData = () => {
-    if (!workspaces || !folderDetails) return { folderInfo: null, files: [], folders: [] };
+  useEffect(() => {
+    if (!workspaces || !folderDetails) return;
 
     // Get files (workspaces) that belong to this folder
-    const files: FileItem[] = workspaces.workspaces?.map(workspace => ({
+    const transformedFiles: FileItem[] = workspaces.workspaces?.map(workspace => ({
       id: workspace.id,
       name: workspace.title || "Untitled File",
       type: "file" as const,
@@ -98,11 +99,11 @@ export default function WorkspacesPage() {
       size: "Unknown",
       isStarred: false,
       sharedWith: [],
-      icon: workspace.icon, // Emoji icon from workspace data
+      icon: workspace.icon,
     })) || [];
 
     // Get subfolders that belong to this folder
-    const folders: FileItem[] = workspaces.folders?.map(folder => ({
+    const transformedFolders: FileItem[] = workspaces.folders?.map(folder => ({
       id: folder.id,
       name: folder.name || "Untitled Folder",
       type: "folder" as const,
@@ -110,17 +111,23 @@ export default function WorkspacesPage() {
       color: folder.color,
     })) || [];
 
-    const folderInfo: FolderInfo = {
+    const transformedFolderInfo: FolderInfo = {
       id: folderDetails?.folder.id || folderId,
       name: folderDetails?.folder.name,
-      itemCount: files.length + folders.length,
+      itemCount: transformedFiles.length + transformedFolders.length,
       lastModified: folderDetails?.folder.updatedAt ? new Date(folderDetails.folder.updatedAt).toLocaleDateString() : "Unknown",
       color: folderDetails?.folder.color,
       createdBy: folderDetails?.folder.ownerId,
     };
+    
+    setFolderInfo(transformedFolderInfo);
+    setFiles(transformedFiles);
+    setFolders(transformedFolders);
+  }, [workspaces, folderDetails, folderId]);
 
-    return { folderInfo, files, folders };
-  };
+  if (!folderDetails && !folderDetailsLoading) {
+    return <div>Folder not found</div>;
+  }
 
   const handleFileClick = (fileId: string) => {
     router.push(`/workspace/${fileId}`);
@@ -140,9 +147,6 @@ export default function WorkspacesPage() {
     console.log('Delete folder:', folderId, folderName);
   };
 
-  const handleBackClick = () => {
-    router.push('/storage');
-  };
 
   const filteredFiles = files.filter(file =>
     file.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -171,23 +175,18 @@ export default function WorkspacesPage() {
   if (workspacesError || (!folderInfo && !workspacesLoading)) {
     return (
       <div className="container mx-auto px-6 py-8 max-w-7xl">
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleBackClick}
-            className="h-8"
-          >
-            <ArrowLeft className="h-3.5 w-3.5 mr-2" />
-            Back to Storage
-          </Button>
+        <div className="mb-6">
+          <StorageBreadcrumb 
+            items={breadcrumbItems}
+            onNavigate={(folderId) => router.push(`/storage/workspaces/${folderId}`)}
+          />
         </div>
         <div className="text-center py-12">
           <h2 className="text-xl font-semibold mb-2">Folder Not Found</h2>
           <p className="text-muted-foreground text-sm mb-4">
             {workspacesError?.message || "The requested folder could not be found."}
           </p>
-          <Button onClick={handleBackClick} variant="outline" size="sm">Go Back to Storage</Button>
+          <Button onClick={() => router.push('/storage')} variant="outline" size="sm">Go Back to Storage</Button>
         </div>
       </div>
     );
@@ -195,23 +194,18 @@ export default function WorkspacesPage() {
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-7xl">
-      {/* Header with Back Button */}
+      {/* Breadcrumb Navigation */}
+      <div className="mb-6">
+        <StorageBreadcrumb 
+          items={breadcrumbItems}
+          onNavigate={(folderId) => router.push(`/storage/workspaces/${folderId}`)}
+        />
+      </div>
+
+      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleBackClick}
-          className="h-8"
-        >
-          <ArrowLeft className="h-3.5 w-3.5 mr-2" />
-          Back
-        </Button>
-        
         <div className="flex items-center gap-2">
-          <div 
-            className="h-5 w-5 rounded" 
-            style={{ backgroundColor: folderInfo?.color || '#6366f1' }}
-          />
+          <FolderClosed className="h-5 w-5" fill="currentColor" style={{ color: folderInfo?.color || '#6366f1' }} />  
           <h1 className="text-2xl font-bold">{folderInfo?.name}</h1>
         </div>
       </div>
@@ -249,7 +243,10 @@ export default function WorkspacesPage() {
           
           <Button 
             size="sm"
-            onClick={() => setShowUploadDialog(true)}
+            onClick={() => {
+              // TODO: Implement upload dialog
+              console.log('Upload clicked');
+            }}
             className="ml-2"
           >
             <Upload className="h-4 w-4 mr-2" />
@@ -275,8 +272,6 @@ export default function WorkspacesPage() {
                   color={folder.color || "#6366f1"}
                   lastModified={folder.lastModified}
                   onClick={handleFolderClick}
-                  onRename={handleRenameFolder}
-                  onDelete={handleDeleteFolder}
                 />
               ))}
             </div>
@@ -289,8 +284,6 @@ export default function WorkspacesPage() {
                   name={folder.name}
                   color={folder.color || "#6366f1"}
                   onClick={handleFolderClick}
-                  onRename={handleRenameFolder}
-                  onDelete={handleDeleteFolder}
                 />
               ))}
             </div>
@@ -314,7 +307,6 @@ export default function WorkspacesPage() {
                   name={file.name}
                   icon={file.icon}
                   lastModified={file.lastModified}
-                  isStarred={file.isStarred}
                   onClick={handleFileClick}
                 />
               ))}
@@ -327,7 +319,6 @@ export default function WorkspacesPage() {
                   id={file.id}
                   name={file.name}
                   icon={file.icon}
-                  isStarred={file.isStarred}
                   onClick={handleFileClick}
                 />
               ))}
@@ -346,7 +337,10 @@ export default function WorkspacesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowUploadDialog(true)}
+              onClick={() => {
+                // TODO: Implement upload dialog
+                console.log('Upload clicked');
+              }}
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload Files

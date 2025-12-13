@@ -46,7 +46,7 @@ export function ConditionalNav({ children }: { children: React.ReactNode }) {
     return (
       <>
         <Navbar />
-        {/* <IconSidebar /> */}
+        <IconSidebar />
         <div>
           {children}
         </div>

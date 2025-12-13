@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,6 +21,14 @@ interface ProblemNavigationProps {
   incorrectAnswers: Set<string>;
   /** Callback when problem index changes */
   onProblemChange: (index: number) => void;
+  /** Callback for previous button */
+  onPrevious?: () => void;
+  /** Callback for next button */
+  onNext?: () => void;
+  /** Callback for reset button */
+  onReset?: () => void;
+  /** Whether answer is being checked */
+  isCheckingAnswer?: boolean;
 }
 
 /**
@@ -40,36 +48,46 @@ export const ProblemNavigation = ({
   problemIds,
   correctAnswers,
   incorrectAnswers,
-  onProblemChange
+  onProblemChange,
+  onPrevious,
+  onNext,
+  onReset,
+  isCheckingAnswer = false
 }: ProblemNavigationProps) => {
   if (totalProblems <= 1) {
     return null;
   }
 
-
-  console.log("problemIds", problemIds);
   return (
     <Card className="border border-border/50 shadow-sm">
       <CardContent className="p-4">
-        <div className="space-y-3">
+        <div className="space-y-4">
+          {/* Header with controls */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Problem Navigation</span>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {correctAnswers.size > 0 && (
-                <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span>{correctAnswers.size} correct</span>
-                </div>
-              )}
-              {incorrectAnswers.size > 0 && (
-                <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-red-500" />
-                  <span>{incorrectAnswers.size} incorrect</span>
-                </div>
-              )}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {correctAnswers.size > 0 && (
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                    <span>{correctAnswers.size} correct</span>
+                  </div>
+                )}
+                {incorrectAnswers.size > 0 && (
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                    <span>{incorrectAnswers.size} incorrect</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          
+
+          {/* Previous/Next controls */}
+          {(onPrevious || onNext) && (
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div className="flex items-center gap-2">
+                          {/* Problem grid */}
           <div className="flex items-center gap-1 flex-wrap">
             {problemIds.map((problemId: string, index: number) => {
               const isCorrect = correctAnswers.has(problemId);
@@ -98,6 +116,53 @@ export const ProblemNavigation = ({
               );
             })}
           </div>
+                {onReset && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onReset}
+                    className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Reset
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-1">
+                {onPrevious && (
+                  <Button
+                    variant={currentProblemIndex > 0 ? "outline" : "ghost"}
+                    size="sm"
+                    onClick={onPrevious}
+                    disabled={isCheckingAnswer || currentProblemIndex === 0}
+                    className="h-8 gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                )}
+                
+                <div className="px-3 py-1 text-sm font-medium text-muted-foreground">
+                  {currentProblemIndex + 1} / {totalProblems}
+                </div>
+                
+                {onNext && (
+                  <Button
+                    variant={currentProblemIndex < totalProblems - 1 ? "default" : "ghost"}
+                    size="sm"
+                    onClick={onNext}
+                    disabled={isCheckingAnswer || currentProblemIndex === totalProblems - 1}
+                    className="h-8 gap-1"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          
         </div>
       </CardContent>
     </Card>

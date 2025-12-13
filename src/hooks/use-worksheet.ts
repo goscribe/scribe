@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import { usePusherWorksheet } from './pusher/use-pusher-worksheet';
 import { RouterOutputs } from '@goscribe/server';
+import { WorksheetQuestionMeta } from '@/types/worksheet';
 
 type Worksheet = RouterOutputs['worksheets']['get'];
 type WorksheetProblem = Worksheet['questions'][number];
@@ -128,6 +129,32 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
     onSuccess: (data, variables) => {
       toast.success("Answer saved!");
       refetchProgress();
+      
+      // Update local state immediately for better UX
+      if (variables.completed) {
+        setCompletedProblems(prev => new Set([...prev, variables.problemId]));
+        
+        // Track if the answer was incorrect
+        if (!variables.correct) {
+          setIncorrectAnswers(prev => new Set([...prev, variables.problemId]));
+        } else {
+          // Remove from incorrect if it was previously incorrect but now correct
+          setIncorrectAnswers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(variables.problemId);
+            return newSet;
+          });
+        }
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to save answer");
+    },
+  });
+
+  const updateProblemStatusMutation = trpc.worksheets.updateProblemStatus.useMutation({
+    onSuccess: (data, variables) => {
+      toast.success("Answer saved!");
       
       // Update local state immediately for better UX
       if (variables.completed) {
@@ -355,14 +382,99 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
    * @param problemId - The ID of the problem to check
    * @param userAnswer - The user's answer
    * @param type - The problem type
+   * @param correctAnswer - The correct answer (optional, for direct checking)
    * @returns Whether the answer is correct
    */
-  const checkAnswer = (problemId: string, userAnswer: string, type: string) => {
+  const checkAnswer = (problemId: string, userAnswer: string, type: string, correctAnswer?: string) => {
     if (!userAnswer) return false;
     
-    // worksheetId: z.string(),
-    // questionId: z.string(),
-    // answer: z.string().min(1),
+    // For MCQ and TRUE_FALSE, check directly without waiting for API call
+    if (type === 'MULTIPLE_CHOICE' || type === 'TRUE_FALSE') {
+      if (!correctAnswer) {
+        const problem = worksheet?.questions.find((q: WorksheetProblem) => q.id === problemId);
+        correctAnswer = problem?.answer || '';
+      }
+      
+      let isCorrect: boolean;
+      
+      if (type === 'TRUE_FALSE') {
+        // TRUE_FALSE: Check against 'TRUE' or 'FALSE' (uppercase strings)
+        const normalizedCorrect = correctAnswer.toUpperCase();
+        const normalizedUser = userAnswer.toUpperCase();
+        isCorrect = normalizedUser === normalizedCorrect && (normalizedCorrect === 'TRUE' || normalizedCorrect === 'FALSE');
+      } else if (type === 'MULTIPLE_CHOICE') {
+        // MCQ: Use 0-based index (0 to N-1 where N is number of options)
+        const problem = worksheet?.questions.find((q: WorksheetProblem) => q.id === problemId);
+        const options = (problem?.meta as WorksheetQuestionMeta)?.options || [];
+        
+        // Convert user answer (option text) to 0-based index
+        const userIndex = options.indexOf(userAnswer);
+        
+        // Convert correct answer to 0-based index
+        // It could be an index string ("0", "1", etc.) or option text
+        let correctIndex = -1;
+        const correctAsNumber = parseInt(correctAnswer, 10);
+        if (!isNaN(correctAsNumber) && correctAsNumber >= 0 && correctAsNumber < options.length) {
+          // Correct answer is a numeric index
+          correctIndex = correctAsNumber;
+        } else {
+          // Correct answer is option text, find its index
+          correctIndex = options.indexOf(correctAnswer);
+        }
+        
+        isCorrect = userIndex === correctIndex && userIndex !== -1 && correctIndex !== -1;
+      } else {
+        // Fallback: direct comparison
+        isCorrect = userAnswer === correctAnswer;
+      }
+      
+      // Update local state immediately
+      setIsCheckingAnswer(false);
+      setCompletedProblems(prev => new Set([...prev, problemId]));
+      
+      if (isCorrect) {
+        setCorrectAnswers(prev => new Set([...prev, problemId]));
+        setIncorrectAnswers(prev => {
+          const next = new Set(prev);
+          next.delete(problemId);
+          return next;
+        });
+      } else {
+        setIncorrectAnswers(prev => new Set([...prev, problemId]));
+        setCorrectAnswers(prev => {
+          const next = new Set(prev);
+          next.delete(problemId);
+          return next;
+        });
+      }
+
+      updateProblemStatusMutation.mutate({
+        problemId: problemId,
+        completed: true,
+        correct: isCorrect,
+        answer: userAnswer,
+      });
+    //   updateProblemStatus: authedProcedure
+    // .input(z.object({
+    //   problemId: z.string(),
+    //   completed: z.boolean(),
+    //   answer: z.string().optional(),
+    //   correct: z.boolean().optional(),
+    // }))
+
+
+      // // Still save progress to backend, but don't wait for it
+      // checkAnswerMutation.mutate({
+      //   worksheetId: worksheetId!,
+      //   questionId: problemId,
+      //   answer: userAnswer,
+      // });
+      
+      return isCorrect;
+    }
+    
+    // For other types (TEXT, NUMERIC, MATCHING, etc.), use the API mutation
+    setIsCheckingAnswer(true);
     checkAnswerMutation.mutate({
       worksheetId: worksheetId!,
       questionId: problemId,
@@ -370,20 +482,6 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
     });
 
     return true;
-
-    // switch (type) {
-    //   case 'TEXT':
-    //     return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
-    //   case 'NUMERIC':
-    //     return parseFloat(userAnswer) === parseFloat(correctAnswer);
-    //   case 'TRUE_FALSE':
-    //     return userAnswer.toLowerCase() === correctAnswer.toLowerCase();
-    //   case 'MULTIPLE_CHOICE':
-    //   case 'MATCHING':
-    //     return userAnswer === correctAnswer;
-    //   default:
-    //     return userAnswer === correctAnswer;
-    // }
   };
 
   /**
@@ -397,8 +495,8 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
     if (!problem) return;
     
     setIsCheckingAnswer(true);
-    // Check if answer is correct
-    checkAnswer(problemId, answer, problem.type);
+    // Check if answer is correct (pass correctAnswer for direct checking of MCQ/TrueFalse)
+    checkAnswer(problemId, answer, problem.type, problem.answer || '');
   };
 
   /**

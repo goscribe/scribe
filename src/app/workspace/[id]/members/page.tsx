@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Card, CardContent } from "@/components/ui/card";
 import { Users, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MemberHeader } from "@/components/member/member-header";
@@ -49,7 +48,6 @@ export default function MembersPage() {
     removeMember,
     openInviteModal,
     closeInviteModal,
-    refetch,
   } = useMembers({ workspaceId });
 
   // Loading state

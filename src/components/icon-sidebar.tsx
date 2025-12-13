@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, CheckSquare } from "lucide-react";
+import { FileText, Share2, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -18,9 +18,9 @@ const sidebarItems = [
     href: "/storage",
   },
   {
-    name: "Todo",
-    icon: CheckSquare,
-    href: "/todo",
+    name: "Shared",
+    icon: Users,
+    href: "/shared",
   },
 ];
 

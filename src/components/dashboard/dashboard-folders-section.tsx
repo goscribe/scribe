@@ -187,8 +187,6 @@ export const DashboardFoldersSection = ({
               color={folder.color || "#6366f1"}
               lastModified={folder.lastModified}
               onClick={onFolderClick}
-              onRename={onRenameFolder}
-              onDelete={onDeleteFolder}
             />
           ))}
         </div>
@@ -201,8 +199,6 @@ export const DashboardFoldersSection = ({
               name={folder.name}
               color={folder.color || "#6366f1"}
               onClick={onFolderClick}
-              onRename={onRenameFolder}
-              onDelete={onDeleteFolder}
             />
           ))}
         </div>

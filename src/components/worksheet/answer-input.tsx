@@ -110,17 +110,18 @@ export const AnswerInput = ({
     case 'MATCHING':
     default:
       return (
-        <Textarea
-          placeholder="Enter your answer"
-          value={currentAnswer}
-          onChange={(e) => onAnswerChange(e.target.value)}
-          disabled={disabled || (isCompleted && !isIncorrect)}
-          rows={3}
-          className={cn(
-            "resize-none",
-            isIncorrect && "border-destructive"
-          )}
-        />
+        <div className="flex-1 flex flex-col min-h-0">
+          <Textarea
+            placeholder="Enter your answer"
+            value={currentAnswer}
+            onChange={(e) => onAnswerChange(e.target.value)}
+            disabled={disabled || (isCompleted && !isIncorrect)}
+            className={cn(
+              "resize-none h-full min-h-[120px]",
+              isIncorrect && "border-destructive"
+            )}
+          />
+        </div>
       );
   }
 };

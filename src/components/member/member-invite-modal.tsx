@@ -144,7 +144,7 @@ export const MemberInviteModal = ({
               <SelectContent>
                 <SelectItem value="member">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                    <Badge variant="outline" className="bg-gray-50 dark:bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-500/20">
                       Member
                     </Badge>
                     <span className="text-sm text-muted-foreground">
@@ -154,7 +154,7 @@ export const MemberInviteModal = ({
                 </SelectItem>
                 <SelectItem value="admin">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    <Badge variant="outline" className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20">
                       Admin
                     </Badge>
                     <span className="text-sm text-muted-foreground">

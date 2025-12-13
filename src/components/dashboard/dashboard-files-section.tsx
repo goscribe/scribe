@@ -51,7 +51,7 @@ export const DashboardFilesSection = ({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-medium">Recent Files</h2>
+        <h2 className="text-base font-medium">Files</h2>
         <div className="flex items-center space-x-2">
           <Badge variant="secondary" className="text-xs">
             {files.length} files
@@ -78,7 +78,6 @@ export const DashboardFilesSection = ({
               name={file.name}
               icon={file.icon}
               lastModified={file.lastModified}
-              isStarred={file.isStarred}
               onClick={onFileClick}
             />
           ))}
@@ -91,7 +90,6 @@ export const DashboardFilesSection = ({
               id={file.id}
               name={file.name}
               icon={file.icon}
-              isStarred={file.isStarred}
               onClick={onFileClick}
             />
           ))}
