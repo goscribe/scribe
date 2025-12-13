@@ -145,7 +145,7 @@ export const Navbar = ({}: NavbarProps) => {
               {/* New Dropdown */}
               <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 border-border/50 hover:bg-muted/50">
+              <Button variant="outline" size="sm">
                 <Plus className="h-4 w-4 mr-1.5" />
                 New
               </Button>
