@@ -9,6 +9,7 @@ import { useFileUpload } from "@/hooks/use-file-upload";
 import { trpc } from "@/lib/trpc";
 import { WorkspaceTab } from "@/components/workspace/navigation-tabs";
 import { usePusherAnalysis } from "@/hooks/pusher/use-pusher-analysis";
+import { cn } from "@/lib/utils";
 
 /**
  * Props for the WorkspaceLayout component
@@ -77,7 +78,8 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   return (
     <div 
-      className="flex ml-16 h-[calc(100vh-3rem)]"
+    // isCollapsed ? "w-[4.5rem]" : "w-72"
+      className={cn("flex ml-16 h-full overflow-hidden")}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -92,16 +94,17 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
         isUploading={isUploading}
         onUploadClick={handleUploadClick}
         files={files}
-      />
-      
-      {/* Sidebar Toggle Button */}
-      <SidebarToggle 
-        isCollapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
+      >
+        {/* Sidebar Toggle Button */}
+        <SidebarToggle 
+          isCollapsed={isSidebarCollapsed}
+          onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+      </WorkspaceSidebar>
       
       {/* Main Content Area */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto"       style={{ marginLeft: isSidebarCollapsed ? "4.5rem" : "18rem" /* 4rem + 18rem */ }}
+      >
         {/* Hidden File Input for programmatic file selection */}
         <input
           id="sidebar-file-upload"

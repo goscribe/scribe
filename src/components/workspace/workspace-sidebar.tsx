@@ -24,6 +24,8 @@ interface WorkspaceSidebarProps {
   onUploadClick?: () => void;
   /** Array of files to display in the files section */
   files: MediaFile[];
+  /** Optional children (e.g., toggle button) */
+  children?: React.ReactNode;
 }
 
 /**
@@ -44,14 +46,17 @@ export const WorkspaceSidebar = ({
   isCollapsed, 
   isUploading, 
   onUploadClick,
-  files 
+  files,
+  children
 }: WorkspaceSidebarProps) => {
   return (
     <div className={cn(
-      "bg-background border-r-2 border-border/50 transition-all duration-300 ease-out flex flex-col",
+      "bg-background fixed border-r-2 border-border/50 transition-all duration-300 ease-out flex flex-col ",
       "h-[calc(100vh-3rem)]", // Subtract navbar height and add shadow
       isCollapsed ? "w-[4.5rem]" : "w-72"
     )}>
+      {/* Toggle button positioned relative to this fixed container */}
+      {children}
       <div className="border-b border-border/50 bg-muted/5">
         <WorkspaceDropdown isCollapsed={isCollapsed} />
       </div>

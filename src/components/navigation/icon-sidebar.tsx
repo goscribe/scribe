@@ -44,7 +44,7 @@ export function IconSidebar() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside className="bg-background fixed left-0 top-0 z-20 flex h-screen w-14 flex-col items-center border-r border-border pt-16 pb-8">
+      <aside className="bg-background fixed left-0 top-0 z-20 flex h-full w-14 flex-col items-center border-r border-border pt-16 pb-8">
         <nav className="flex flex-1 flex-col items-center gap-3">
           {sidebarItems.map((item) => {
             const isActive = pathname.startsWith(item.href);

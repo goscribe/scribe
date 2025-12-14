@@ -56,7 +56,7 @@ export const Navbar = ({}: NavbarProps) => {
   const utils = trpc.useUtils();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background">
+    <header className="fixed top-0 z-40 w-full border-b border-border bg-background">
       <div className="flex h-14 items-center justify-between px-6">
         {/* Logo */}
         <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => router.push("/storage")}>

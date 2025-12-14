@@ -44,13 +44,13 @@ export function ConditionalNav({ children }: { children: React.ReactNode }) {
   // For authenticated users, show the regular navbar and sidebar
   if (isAuthenticated) {
     return (
-      <>
+      <div className="h-full overflow-hidden">
         <Navbar />
         <IconSidebar />
-        <div>
+        <div className="h-full overflow-scroll pt-14">
           {children}
         </div>
-      </>
+      </div>
     );
   }
   
