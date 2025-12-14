@@ -112,7 +112,6 @@ export const FlashcardGenerateModal = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
             Generate Flashcards
           </DialogTitle>
         </DialogHeader>
@@ -145,7 +144,7 @@ export const FlashcardGenerateModal = ({
           </div>
 
           {/* Example Prompts */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label className="text-sm font-medium">Example prompts:</Label>
             <div className="space-y-1">
               {examplePrompts.map((example, index) => (
@@ -160,7 +159,7 @@ export const FlashcardGenerateModal = ({
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
 
           <div className="flex gap-2 justify-end">
             <Button 
