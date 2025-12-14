@@ -48,7 +48,7 @@ export default function LoginPage() {
     try {
       const res = await client.auth.login.mutate({ email, password });
       setCookies("authToken", res.token, { path: "/" });
-      router.push("/workspace");
+      router.push("/storage");
     } catch (error) {
       setError("Invalid email or password");
       console.error('Login failed:', error);
