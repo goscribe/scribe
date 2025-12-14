@@ -263,7 +263,6 @@ export default function PodcastDetailPage() {
           {/* Segments List - Cleaner Design */}
           <Card>
             <CardContent className="p-0">
-              <ScrollArea className="h-[500px]">
                 <div className="p-4 space-y-2">
                   {sortedSegments.map((segment, index) => (
                     <div
@@ -354,7 +353,6 @@ export default function PodcastDetailPage() {
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
             </CardContent>
           </Card>
         </div>
