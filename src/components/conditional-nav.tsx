@@ -47,7 +47,7 @@ export function ConditionalNav({ children }: { children: React.ReactNode }) {
       <div className="h-full overflow-hidden">
         <Navbar />
         <IconSidebar />
-        <div className="h-full overflow-scroll pt-14">
+        <div className="h-full overflow-hidden pt-14">
           {children}
         </div>
       </div>
