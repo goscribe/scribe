@@ -58,19 +58,18 @@ export const FilesSection = ({ files, isUploading, onUploadClick, /*onDownload*/
   };
 
   return (
-    <>
-      <div className="h-px bg-border mx-2 my-3" />
-      <div className="px-2">
+    <div className="px-2 mt-2">
+      <div className="border-t border-border pt-2">
         <Collapsible open={isFilesOpen} onOpenChange={setIsFilesOpen}>
-          <div className="w-full flex items-center justify-between px-2 py-1.5 group">
-            <CollapsibleTrigger className="flex items-center gap-1 flex-1 hover:text-foreground rounded-sm transition-colors px-0 py-0">
+          <div className="w-full flex items-center justify-between px-3 py-1 group">
+            <CollapsibleTrigger className="flex items-center gap-1.5 flex-1 hover:text-foreground transition-colors">
               <ChevronRight className={cn(
-                "h-3 w-3 text-muted-foreground transition-transform",
-                isFilesOpen && "transform rotate-90"
+                "h-3 w-3 text-muted-foreground transition-transform duration-200",
+                isFilesOpen && "rotate-90"
               )} />
-              <div className="text-xs font-semibold text-muted-foreground">
-                Files {files.length > 0 && `(${files.length})`}
-              </div>
+              <span className="text-[11px] font-medium text-muted-foreground">
+                Files{files.length > 0 ? ` (${files.length})` : ''}
+              </span>
             </CollapsibleTrigger>
             <button
               onClick={(e) => {
@@ -80,7 +79,7 @@ export const FilesSection = ({ files, isUploading, onUploadClick, /*onDownload*/
               }}
               disabled={isUploading}
               className={cn(
-                "transition-opacity p-0.5 hover:bg-muted rounded-sm",
+                "p-1 rounded-md transition-all hover:bg-accent",
                 isUploading ? "opacity-100" : "opacity-0 group-hover:opacity-100"
               )}
               title={isUploading ? "Uploading..." : "Upload files"}
@@ -88,63 +87,49 @@ export const FilesSection = ({ files, isUploading, onUploadClick, /*onDownload*/
               {isUploading ? (
                 <div className="h-3 w-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
               ) : (
-                <Upload className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                <Upload className="h-3 w-3 text-muted-foreground" />
               )}
             </button>
           </div>
-          <CollapsibleContent className="mt-1 space-y-0.5">
+          <CollapsibleContent className="mt-0.5">
             {isUploading && (
-              <div className="px-2 py-2 text-xs text-muted-foreground flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground">
                 <div className="h-3 w-3 border-2 border-muted-foreground/30 border-t-foreground rounded-full animate-spin" />
-                Uploading files...
+                Uploading...
               </div>
             )}
             {!isUploading && files.length === 0 ? (
-              <div className="px-2 py-2 text-xs text-muted-foreground">
-                No files uploaded
+              <div className="px-3 py-2">
+                <p className="text-xs text-muted-foreground">No files yet</p>
               </div>
             ) : !isUploading ? (
-              <>
+              <div className="space-y-px">
                 {files.slice(0, 10).map((file) => {
                   const FileIcon = getFileIcon(file.mimeType);
-                  
                   return (
                     <div
                       key={file.id}
-                      className="w-full flex items-center gap-2 px-2 py-1 rounded-sm text-left transition-colors hover:bg-muted/50 group"
+                      className="flex items-center gap-2 px-3 py-1 rounded-md transition-colors hover:bg-accent mx-1"
                     >
-                      <FileIcon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs truncate text-muted-foreground">
-                          {file.name}
-                        </div>
-                      </div>
-                      {/* <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onDownload(file.id, file.name);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-muted rounded-sm"
-                        title="Download file"
-                      >
-                        <Download className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                      </button> */}
+                      <FileIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="text-xs truncate text-muted-foreground">
+                        {file.name}
+                      </span>
                     </div>
                   );
                 })}
                 {files.length > 10 && (
-                  <div className="px-2 py-1">
-                    <div className="text-xs text-muted-foreground">
-                      +{files.length - 10} more files
-                    </div>
+                  <div className="px-3 py-1">
+                    <span className="text-xs text-muted-foreground">
+                      +{files.length - 10} more
+                    </span>
                   </div>
                 )}
-              </>
+              </div>
             ) : null}
           </CollapsibleContent>
         </Collapsible>
       </div>
-    </>
+    </div>
   );
 };

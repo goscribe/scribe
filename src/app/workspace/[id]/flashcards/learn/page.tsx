@@ -12,9 +12,10 @@ import { RouterOutputs } from "@goscribe/server";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { FlashcardStats } from "@/components/flashcard/widgets/flashcard-stats";
+import { FlashcardStats } from "@/components/flashcard/flashcard-stats";
 
 type Flashcard = RouterOutputs['flashcards']['getDueFlashcards'][number];
+type BaseFlashcard = RouterOutputs['flashcards']['listCards'][number];
 
 /**
  * ADDING NEW QUESTION MODES:
@@ -123,10 +124,10 @@ export default function FlashcardLearnPage() {
   // }, [progress]);
 
   // Get current card's progress from database
-  const currentCardProgress = progressData?.find(p => p.flashcardId === currentCard?.id)?.progress;
-  const consecutiveWrong = currentCardProgress?.timesIncorrectConsecutive || 0;
+  // const currentCardProgress = progressData?.find(p => p.flashcardId === currentCard?.id)?.progress;
+  // const consecutiveWrong = currentCardProgress?.timesIncorrectConsecutive || 0;
   
-  console.log('Current card:', currentCard?.id, 'consecutiveWrong:', consecutiveWrong, 'progress:', currentCardProgress);
+  // console.log('Current card:', currentCard?.id, 'consecutiveWrong:', consecutiveWrong, 'progress:', currentCardProgress);
 
   /**
    * Generate MCQ options for the current card
@@ -229,6 +230,47 @@ export default function FlashcardLearnPage() {
   const skipCard = () => {
     nextCard();
   };
+
+  // Keyboard shortcuts: Space/Enter to check, ArrowRight to next, ArrowLeft to go back
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in the answer input
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        // Only allow Enter to submit from input
+        if (e.key === "Enter" && !showFeedback && currentCard?.mode === "type" && userAnswer.trim()) {
+          e.preventDefault();
+          checkAnswer();
+        }
+        return;
+      }
+
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (showFeedback) {
+          nextCard();
+        } else if (currentCard?.mode === "mcq" && selectedOption !== null) {
+          checkAnswer();
+        }
+      } else if (e.key === "ArrowRight" && showFeedback) {
+        e.preventDefault();
+        nextCard();
+      } else if (e.key === "ArrowLeft" && currentIndex > 0 && !showFeedback) {
+        e.preventDefault();
+        setCurrentIndex((prev) => prev - 1);
+        resetCard();
+      } else if (currentCard?.mode === "mcq" && !showFeedback) {
+        // Number keys 1-4 for MCQ selection
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= mcqOptions.length) {
+          setSelectedOption(num - 1);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showFeedback, currentCard, selectedOption, userAnswer, currentIndex, mcqOptions.length]);
 
   /**
    * Reset card state
@@ -350,7 +392,7 @@ export default function FlashcardLearnPage() {
             Back
           </Button>
         </div>
-        <FlashcardStats timesStudied={currentCardProgress?.timesStudied || 0} masteryLevel={currentCardProgress?.masteryLevel || 0} consecutiveIncorrect={currentCardProgress?.timesIncorrectConsecutive || 0} currentCardIndex={currentIndex} totalCards={cardsWithModes.length} />
+        <FlashcardStats card={currentCard as unknown as BaseFlashcard} currentCardIndex={currentIndex} totalCards={cardsWithModes.length} />
 
         {/* Progress Section */}
         <div className="space-y-3">
@@ -456,32 +498,6 @@ export default function FlashcardLearnPage() {
               </div>
             )}
 
-          {/* Future mode implementations can be added here:
-          
-          {currentCard?.mode === "true-false" && (
-            <TrueFalseQuestion 
-              card={currentCard}
-              onAnswer={handleTrueFalseAnswer}
-              showFeedback={showFeedback}
-            />
-          )}
-
-          {currentCard?.mode === "matching" && (
-            <MatchingQuestion 
-              card={currentCard}
-              onAnswer={handleMatchingAnswer}
-              showFeedback={showFeedback}
-            />
-          )}
-
-          {currentCard?.mode === "fill-blank" && (
-            <FillBlankQuestion 
-              card={currentCard}
-              onAnswer={handleFillBlankAnswer}
-              showFeedback={showFeedback}
-            />
-          )}
-          */}
 
             {/* Feedback Message */}
             {showFeedback && (

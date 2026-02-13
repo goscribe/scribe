@@ -9,8 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { RouterOutputs } from "@goscribe/server";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { FlashcardStats } from "./widgets/flashcard-stats";
+import { FlashcardStats } from "./flashcard-stats";
 import { useParams, useRouter } from "next/navigation";
+import { getStatusColor, getCardStatus, getStatusLabel } from "./progress";
 
 type Flashcard = RouterOutputs['flashcards']['listCards'][number];
 
@@ -51,8 +52,6 @@ export const FlashcardCardOverview = ({
   }, [cards.length]); // Only depend on cards.length, not the state values
 
 
-  console.log("card flipped outside", isCardFlipped);
-
   const goToNextCard = () => {
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
@@ -68,11 +67,7 @@ export const FlashcardCardOverview = ({
   };
 
   const toggleCardFlip = () => {
-    console.log("toggle card flip--- current state:", isCardFlipped);
-    setIsCardFlipped(prev => {
-      console.log("setting isCardFlipped from", prev, "to", !prev);
-      return !prev;
-    });
+    setIsCardFlipped(prev => !prev);
   };
 
   const shuffleCards = () => {
@@ -90,43 +85,24 @@ export const FlashcardCardOverview = ({
   const progressPercentage = ((currentCardIndex + 1) / cards.length) * 100;
 
   // Get current card's progress
-  const cardProgress = currentCard?.progress[0];
-  const masteryLevel = cardProgress?.masteryLevel || 0;
-  const timesStudied = cardProgress?.timesStudied || 0;
-  const consecutiveIncorrect = cardProgress?.timesIncorrectConsecutive || 0;
+  // const cardProgress = currentCard?.progress[0];
+  // const masteryLevel = cardProgress?.masteryLevel || 0;
+  // const timesStudied = cardProgress?.timesStudied || 0;
+  // const consecutiveIncorrect = cardProgress?.timesIncorrectConsecutive || 0;
 
   return (
-    <div className="flex flex-col items-center space-y-6 py-4">
-      <div className="w-full max-w-3xl">
-        <FlashcardStats timesStudied={timesStudied} masteryLevel={masteryLevel} consecutiveIncorrect={consecutiveIncorrect} currentCardIndex={currentCardIndex} totalCards={cards.length} />
+    <div className="space-y-4">
+      <div>
+        <FlashcardStats card={currentCard} currentCardIndex={currentCardIndex} totalCards={cards.length} />
       </div>
       {/* Progress Bar */}
-      <div className="w-full max-w-3xl">
-        <Progress value={progressPercentage} className="h-2" />
+      <div>
+        <Progress value={progressPercentage} className="h-1.5" />
       </div>
-
-      <Card className="w-full max-w-3xl">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Study Mode</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Practice with spaced repetition</p>
-            </div>
-            <Button 
-              variant="default"
-              className="flex items-center gap-2"
-              onClick={() => router.push(`/workspace/${workspaceId}/flashcards/learn`)}
-            >
-              <BookOpen className="w-4 h-4" />
-              Start Learning
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Flip Card */}
       <div
-        className="w-full max-w-3xl cursor-pointer"
+        className="w-full cursor-pointer"
         style={{ perspective: '1000px' }}
         onClick={toggleCardFlip}
       >
@@ -136,99 +112,96 @@ export const FlashcardCardOverview = ({
         `}
           style={{ transformStyle: 'preserve-3d' }}>
           {/* Front */}
-          <Card className="shadow-lg hover:shadow-xl transition-shadow"
+          <Card className="border border-border"
             style={{ backfaceVisibility: 'hidden' }}
           >
-            <CardContent className="p-16 flex flex-col justify-center items-center min-h-[400px]">
-              <div className="text-center w-full space-y-4">
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Question
-                  </span>
-                </div>
-                <h2 className="text-4xl font-bold leading-tight">
+            <CardContent className="p-10 flex flex-col justify-center items-center min-h-[240px]">
+              <div className="text-center w-full space-y-3">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                  Question
+                </span>
+                <p className="text-xl font-semibold leading-relaxed">
                   {currentCard.front}
-                </h2>
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <span>Click or press Space to reveal</span>
-                </div>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Click or press Space to flip
+                </p>
               </div>
             </CardContent>
           </Card>
 
           {/* Back */}
-          <Card className="absolute inset-0 shadow-lg [transform:rotateY(180deg)]"
+          <Card className="absolute inset-0 border border-border [transform:rotateY(180deg)]"
             style={{ backfaceVisibility: 'hidden' }}
           >
-            <CardContent className="p-16 flex flex-col justify-center items-center min-h-[400px]">
-              <div className="text-center w-full space-y-4">
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Answer
-                  </span>
-                </div>
-                <h2 className="text-4xl font-bold leading-tight">
+            <CardContent className="p-10 flex flex-col justify-center items-center min-h-[240px]">
+              <div className="text-center w-full space-y-3">
+                <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                  Answer
+                </span>
+                <p className="text-xl font-semibold leading-relaxed">
                   {currentCard.back}
-                </h2>
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <span>Click or press Space to reveal</span>
-                </div>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Click or press Space to flip
+                </p>
               </div>
-
             </CardContent>
           </Card>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="w-full max-w-3xl flex items-center justify-between gap-4">
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={goToPreviousCard}
-          disabled={currentCardIndex === 0}
-          className="flex-1 h-12"
-        >
-          <ChevronLeft className="h-5 w-5 mr-2" />
-          Previous
-        </Button>
-
-        <div className="flex gap-2">
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={goToPreviousCard}
+            disabled={currentCardIndex === 0}
+            className="h-8"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Prev
+          </Button>
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={shuffleCards}
             title="Random card"
           >
-            <Shuffle className="h-4 w-4" />
+            <Shuffle className="h-3.5 w-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={() => onEditCard(currentCard)}
             title="Edit card"
           >
-            <Edit3 className="h-4 w-4" />
+            <Edit3 className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={goToNextCard}
+            disabled={currentCardIndex === cards.length - 1}
+            className="h-8"
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
 
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={goToNextCard}
-          disabled={currentCardIndex === cards.length - 1}
-          className="flex-1 h-12"
-        >
-          Next
-          <ChevronRight className="h-5 w-5 ml-2" />
-        </Button>
-      </div>
-
-      {/* Keyboard Hints */}
-      <div className="text-xs text-muted-foreground space-x-4">
-        <span>← → Navigate</span>
-        <span>•</span>
-        <span>Space / Enter Flip</span>
+        {/* Keyboard Hints */}
+        <p className="text-[11px] text-muted-foreground">
+          <kbd className="px-1 py-0.5 rounded border border-border bg-muted text-[10px]">←</kbd>
+          <kbd className="px-1 py-0.5 rounded border border-border bg-muted text-[10px] ml-0.5">→</kbd>
+          <span className="mx-1.5">navigate</span>
+          <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted text-[10px]">Space</kbd>
+          <span className="ml-1.5">flip</span>
+        </p>
       </div>
     </div>
   );

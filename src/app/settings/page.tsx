@@ -48,12 +48,14 @@ export default function SettingsPage() {
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsUploading(true);
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
       const result = await uploadProfilePictureMutation.mutateAsync();
 
-      await fetch(result.signedUrl, {
+      const uploadResponse = await fetch(result.signedUrl, {
         method: 'PUT',
         body: file,
         headers: {
@@ -61,8 +63,15 @@ export default function SettingsPage() {
         },
       });
 
+      if (!uploadResponse.ok) {
+        throw new Error('Upload failed');
+      }
+
       utils.auth.getSession.invalidate();
-      toast.success("Profile picture updated successfully!");
+      toast.success("Profile picture updated!");
+    } catch (error) {
+      toast.error("Failed to upload profile picture. Please try again.");
+    } finally {
       setIsUploading(false);
     }
   };

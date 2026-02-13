@@ -139,8 +139,7 @@ export const useFileUpload = (workspaceId: string, onSuccess?: () => void) => {
         generateWorksheet: true,
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      uploadAndAnalyzeMutation.mutate(analyzeInput as unknown as any);
+      uploadAndAnalyzeMutation.mutate(analyzeInput);
     } catch (error) {
       console.error('Error uploading files:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to upload files');

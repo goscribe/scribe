@@ -50,7 +50,7 @@ export const MemberHeader = ({
       {/* Title and member count */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-medium">Members</h3>
+          <h3 className="text-lg font-bold">Members</h3>
           <p className="text-sm text-muted-foreground">
             {memberCount} member{memberCount !== 1 ? 's' : ''}
           </p>

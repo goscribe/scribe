@@ -233,7 +233,6 @@ export const useWorksheet = (workspaceId: string, worksheetId?: string) => {
           toast.error(`Generation failed: ${error}`);
         },
         onWorksheetInfoComplete: () => {
-          toast.success("Worksheet information updated!");
           refetchWorksheets();
           // Also refetch individual worksheet if we're viewing one
           if (worksheetId) {

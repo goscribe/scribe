@@ -61,15 +61,15 @@ export const usePodcast = (workspaceId: string, podcastId: string) => {
     const { latestPodcastInfo, lastCompleted, lastError } = pusherState;
     
     if (latestPodcastInfo?.artifactId === podcastId) {
-      console.log('Current podcast info updated:', latestPodcastInfo);
+      // Podcast info updated
     }
     
     if (lastCompleted?.artifactId === podcastId) {
-      console.log('Current podcast completed:', lastCompleted);
+      // Podcast completed
     }
     
     if (lastError?.artifactId === podcastId) {
-      console.log('Current podcast error:', lastError);
+      // Podcast error handled via toast
     }
   }, [pusherState, podcastId]);
 

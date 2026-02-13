@@ -45,7 +45,7 @@ export default function ChatPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-screen w-full">
+      <div className="flex flex-col h-[calc(100vh-4rem)] w-full">
         <div className="p-4 border-b bg-card">
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-32" />
@@ -59,7 +59,7 @@ export default function ChatPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen w-full">
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)] w-full">
         <div className="text-center">
           <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">Failed to load chat</h3>
@@ -73,7 +73,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-background">
+    <div className="flex flex-col h-[calc(100vh-4rem)] w-full bg-background">
       {/* Channel Header with Popover */}
       <div className="p-4 border-b bg-card flex-shrink-0">
         <div className="flex items-center justify-between">

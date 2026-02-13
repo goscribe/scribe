@@ -4,7 +4,7 @@ import { useState } from "react";
 import { 
   FileText, 
   FolderClosed,
-  Calendar,
+  Flame,
   BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { DashboardSearch } from "@/components/dashboard/dashboard-search";
 import { DashboardFoldersSection } from "@/components/dashboard/dashboard-folders-section";
 import { DashboardFilesSection } from "@/components/dashboard/dashboard-files-section";
+import { StudyStreakCard } from "@/components/dashboard/widgets/study-streak-card";
 import { formatBytes } from "@/lib/audio-validation";
 import { FileItem, FolderItem, transformFileInformation, transformFolderInformation } from "@/lib/storage/transformFileFolderInfo";
 
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const { data: workspaceStats, isLoading: workspaceStatsLoading, refetch: refetchWorkspaceStats, error: workspaceStatsError } = trpc.workspace.getStats.useQuery();
+  const { data: studyAnalytics } = trpc.workspace.getStudyAnalytics.useQuery();
   // Fetch workspace data from TRPC
   const { data: workspaces, isLoading: workspacesLoading, refetch: refetchWorkspaces, error: workspacesError } = trpc.workspace.list.useQuery({});
 
@@ -48,7 +50,7 @@ export default function DashboardPage() {
    * @param folderId - The ID of the folder to navigate to
    */
   const handleFolderClick = (folderId: string) => {
-    router.push(`/storage/workspaces/${folderId}`);
+    router.push(`/storage/folder/${folderId}`);
   };
 
   /**
@@ -123,9 +125,9 @@ export default function DashboardPage() {
       extra: <div className="flex flex-col gap-2"><Progress value={workspaceStats?.spaceUsed ? (workspaceStats.spaceUsed / (workspaceStats.spaceTotal)) * 100 : 0} className="h-1.5 mt-2" /> <span className="text-xs text-muted-foreground">{workspaceStats?.spaceUsed ? formatBytes(workspaceStats.spaceUsed) + " / " + formatBytes(workspaceStats.spaceTotal) : "Unknown"}</span></div>,
     },
     {
-      label: "Updated",
-      value: workspaceStats?.lastUpdated ? new Date(workspaceStats.lastUpdated).toLocaleDateString() : "Unknown",
-      icon: Calendar,
+      label: "Study Streak",
+      value: studyAnalytics?.streak ?? 0,
+      icon: Flame,
     },
   ];
 
@@ -133,6 +135,17 @@ export default function DashboardPage() {
     <div className="container mx-auto px-6 py-8 max-w-7xl">
       {/* Header */}
       <DashboardHeader userName={session?.user?.name ?? ""} />
+
+      {/* Study Streak & Analytics */}
+      {studyAnalytics && (studyAnalytics.streak > 0 || studyAnalytics.flashcards.total > 0 || studyAnalytics.worksheets.completed > 0) && (
+        <StudyStreakCard
+          streak={studyAnalytics.streak}
+          totalStudyDays={studyAnalytics.totalStudyDays}
+          weeklyActivity={studyAnalytics.weeklyActivity}
+          flashcards={studyAnalytics.flashcards}
+          worksheets={studyAnalytics.worksheets}
+        />
+      )}
 
       {/* Search and View Controls */}
       <DashboardSearch

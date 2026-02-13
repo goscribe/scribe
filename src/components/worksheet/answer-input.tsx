@@ -49,7 +49,6 @@ export const AnswerInput = ({
   onAnswerChange
 }: AnswerInputProps) => {
 
-  console.log("AnswerInput", disabled || (isCompleted && !isIncorrect));
   switch (problem.type) {
     case 'MULTIPLE_CHOICE':
       const options = (problem.meta as WorksheetQuestionMeta)?.options || [];

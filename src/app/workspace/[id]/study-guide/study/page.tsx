@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, BookOpen, Eye, EyeOff, ChevronDown, ChevronUp, Sparkles, CheckCircle, AlertCircle, Lightbulb, PenTool, ArrowRight } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronDown, CheckCircle, PenTool, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import EditorJSMarkdownConverter from '@vingeray/editorjs-markdown-converter';
 
 interface StudySection {
   id: string;
@@ -36,12 +38,15 @@ export default function StudyModePage() {
   const [showAllContent, setShowAllContent] = useState(false);
   const [focusMode, setFocusMode] = useState(true);
   const [currentSummary, setCurrentSummary] = useState("");
-  const [studyPhase, setStudyPhase] = useState<"reading" | "summarizing" | "feedback">("reading");
+  const [studyPhase, setStudyPhase] = useState<"reading" | "summarizing">("reading");
 
   // Parse guide content into sections
   useEffect(() => {
     if (guideData?.latestVersion?.content) {
-      const content = JSON.parse(guideData.latestVersion.content);
+      const content = guideData.latestVersion.content.startsWith("{") || guideData.latestVersion.content.startsWith("[") ? JSON.parse(guideData.latestVersion.content) : {
+        time: Date.now(),
+        blocks: EditorJSMarkdownConverter.toBlocks(guideData.latestVersion.content)
+      };
       const parsedSections: StudySection[] = [];
       
       // Parse the EditorJS blocks into sections
@@ -120,10 +125,12 @@ export default function StudyModePage() {
     }
 
     setSections(prev => prev.map((section, i) => 
-      i === index ? { ...section, userSummary: currentSummary, feedbackGiven: true } : section
+      i === index ? { ...section, userSummary: currentSummary } : section
     ));
     
-    setStudyPhase("feedback");
+    // Mark complete and advance immediately
+    markSectionComplete(index);
+    toast.success("Summary saved!");
   };
 
   const markSectionComplete = (index: number) => {
@@ -177,7 +184,7 @@ export default function StudyModePage() {
         <div className="text-center space-y-4">
           <BookOpen className="h-12 w-12 text-muted-foreground mx-auto" />
           <p className="text-muted-foreground">No study guide available</p>
-          <Button onClick={() => router.back()}>Go Back</Button>
+          <Button onClick={() => router.push(`/workspace/${workspaceId}/study-guide`)}>Go Back</Button>
         </div>
       </div>
     );
@@ -234,6 +241,7 @@ export default function StudyModePage() {
 
 
         {/* Study Sections - Only show current in focus mode */}
+        <ErrorBoundary>
         {sections.filter((_, idx) => !focusMode || idx === currentSectionIndex).map((section, displayIndex) => {
           const index = focusMode ? currentSectionIndex : sections.indexOf(section);
           return (
@@ -247,7 +255,7 @@ export default function StudyModePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-center">
                     <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">
-                      Section {index + 1} • {studyPhase === "reading" ? "Reading" : studyPhase === "summarizing" ? "Summarize" : "Feedback"}
+                      Section {index + 1} • {studyPhase === "reading" ? "Reading" : "Summarize"}
                     </span>
                   </div>
                   <h2 className="text-2xl font-semibold text-center leading-relaxed px-4">
@@ -312,83 +320,30 @@ export default function StudyModePage() {
                     </div>
                   )}
 
-                  {/* Feedback Phase */}
-                  {studyPhase === "feedback" && index === currentSectionIndex && section.userSummary && (
-                    <div className="space-y-4">
-                      {/* User's Summary */}
-                      <Card className="border border-border/50 bg-muted/30 p-4">
-                        <div className="flex items-start gap-3">
-                          <CheckCircle className="h-5 w-5 text-green-500 mt-1" />
-                          <div className="flex-1">
-                            <h3 className="font-medium text-sm mb-2">Your Summary</h3>
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                              {section.userSummary}
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-
-                      {/* AI Feedback */}
-                      <Card className="border border-primary/30 bg-primary/5 p-4">
-                        <div className="flex items-start gap-3">
-                          <Lightbulb className="h-5 w-5 text-yellow-500 mt-1" />
-                          <div className="flex-1">
-                            <h3 className="font-medium text-sm mb-2">Feedback & Key Points</h3>
-                            <div className="space-y-2 text-sm text-muted-foreground">
-                              <p>Great job summarizing! Here are some key points to remember:</p>
-                              <ul className="list-disc list-inside space-y-1 ml-2">
-                                <li>You captured the main concept well</li>
-                                <li>Consider also noting the practical applications</li>
-                                <li>The relationships between concepts are important</li>
-                              </ul>
-                              <div className="flex items-center gap-2 mt-3">
-                                <Badge variant="secondary" className="text-xs">
-                                  <Sparkles className="h-3 w-3 mr-1" />
-                                  Well Done!
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-
-                      {/* Original Content (Collapsed) */}
-                      <details className="group">
-                        <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                          <ChevronDown className="h-3 w-3 group-open:rotate-180 transition-transform" />
-                          Show original content
-                        </summary>
-                        <div className="mt-3 prose prose-sm dark:prose-invert max-w-none pl-4 border-l-2 border-border/50">
-                          <div className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                            {section.content}
-                          </div>
-                        </div>
-                      </details>
-                    </div>
-                  )}
-                  
                   {/* Action Buttons */}
                   <div className="flex items-center justify-center gap-3 mt-8 pt-6 border-t border-border/50">
                     {index === currentSectionIndex && (
                       <>
                         {studyPhase === "reading" && !section.isCompleted && (
-                          <Button
-                            size="lg"
-                            onClick={startSummarizing}
-                            className="px-6 text-sm"
-                          >
-                            Write Summary
-                          </Button>
-                        )}
-                        
-                        {studyPhase === "feedback" && !section.isCompleted && (
-                          <Button
-                            size="lg"
-                            onClick={() => markSectionComplete(index)}
-                            className="px-6 text-sm"
-                          >
-                            {index < sections.length - 1 ? "Next Section" : "Finish"}
-                          </Button>
+                          <div className="flex items-center gap-3">
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              onClick={() => markSectionComplete(index)}
+                              className="px-5 text-sm"
+                            >
+                              <SkipForward className="h-4 w-4 mr-2" />
+                              {index < sections.length - 1 ? "Skip to Next" : "Finish"}
+                            </Button>
+                            <Button
+                              size="lg"
+                              onClick={startSummarizing}
+                              className="px-5 text-sm"
+                            >
+                              <PenTool className="h-4 w-4 mr-2" />
+                              Write Summary
+                            </Button>
+                          </div>
                         )}
                         
                         {section.isCompleted && (
@@ -419,6 +374,7 @@ export default function StudyModePage() {
             </Card>
           );
         })}
+        </ErrorBoundary>
 
         {/* Completion Message */}
         {completedCount === sections.length && sections.length > 0 && (
@@ -463,7 +419,6 @@ export default function StudyModePage() {
                       isCompleted: false, 
                       isRevealed: false,
                       userSummary: undefined,
-                      feedbackGiven: false
                     })));
                     setCurrentSectionIndex(0);
                     setStudyPhase("reading");

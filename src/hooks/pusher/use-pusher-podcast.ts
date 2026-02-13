@@ -51,7 +51,7 @@ export function usePusherPodcast(workspaceId: string, onRefetch?: () => void) {
 
     // Podcast info event - triggers refetch
     channelRef.current.bind(`podcast_info`, () => {
-      toast.info('Podcast info event triggered');
+      // toast.info('Podcast info event triggered');
       onRefetch?.();
     });
 

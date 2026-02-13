@@ -1,30 +1,33 @@
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, AlertTriangle, Lightbulb } from "lucide-react";
+import { getCardStatus, getStatusColor, getStatusLabel, getStatusLabelColor } from "./progress";
+import { RouterOutputs } from "@goscribe/server";
+import { cn } from "@/lib/utils";
+
+type Flashcard = RouterOutputs['flashcards']['listCards'][number];
 
 interface FlashcardStatsProps {
-    timesStudied: number;
-    masteryLevel: number;
-    consecutiveIncorrect: number;
+    card: Flashcard;
     currentCardIndex: number;
     totalCards: number;
 }
     
-export const FlashcardStats = ({ timesStudied, masteryLevel, consecutiveIncorrect, currentCardIndex, totalCards }: FlashcardStatsProps) => {
-    const getMasteryColor = (level: number) => {
-        if (level >= 80) return "bg-green-500 dark:bg-green-600";
-        if (level >= 60) return "bg-blue-500 dark:bg-blue-600";
-        if (level >= 40) return "bg-yellow-500 dark:bg-yellow-600";
-        if (level >= 20) return "bg-orange-500 dark:bg-orange-600";
-        return "bg-red-500 dark:bg-red-600";
-    };
+export const FlashcardStats = ({ card, currentCardIndex, totalCards }: FlashcardStatsProps) => {
+    // const getMasteryColor = (level: number) => {
+    //     if (level >= 80) return "bg-green-500 dark:bg-green-600";
+    //     if (level >= 60) return "bg-blue-500 dark:bg-blue-600";
+    //     if (level >= 40) return "bg-yellow-500 dark:bg-yellow-600";
+    //     if (level >= 20) return "bg-orange-500 dark:bg-orange-600";
+    //     return "bg-red-500 dark:bg-red-600";
+    // };
 
-    const getMasteryLabel = (level: number) => {
-        if (level >= 80) return "Mastered";
-        if (level >= 60) return "Good";
-        if (level >= 40) return "Learning";
-        if (level >= 20) return "Needs Work";
-        return "New";
-    };
+    // const getMasteryLabel = (level: number) => {
+    //     if (level >= 80) return "Mastered";
+    //     if (level >= 60) return "Good";
+    //     if (level >= 40) return "Learning";
+    //     if (level >= 20) return "Needs Work";
+    //     return "New";
+    // };
     return (
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -36,10 +39,14 @@ export const FlashcardStats = ({ timesStudied, masteryLevel, consecutiveIncorrec
               {totalCards}
             </span>
           </div>
+
+          <Badge variant="secondary" className={cn(getStatusLabelColor(getCardStatus(card)), getStatusColor(getCardStatus(card))) + '/50'}>
+          {getStatusLabel(getCardStatus(card))}
+        </Badge>
           
           {/* Mastery Badge & Difficulty Warning */}
-          <div className="flex items-center gap-2">
-            {timesStudied > 0 && (
+          {/* <div className="flex items-center gap-2"> */}
+            {/* {timesStudied > 0 && (
               <>
                 <Badge variant="secondary" className="flex gap-2 items-center">
                     <TrendingUp className="h-3 w-3 text-muted-foreground" />
@@ -55,18 +62,18 @@ export const FlashcardStats = ({ timesStudied, masteryLevel, consecutiveIncorrec
                   </Badge>
                 )}
               </>
-            )}
+            )} */}
   
-            {timesStudied == 0 && (
+            {/* {timesStudied == 0 && (
               <Badge 
                 variant="secondary"
               >
                 Unseen
               </Badge>
             )}
-            
+             */}
             {/* Difficulty Warning Badge */}
-            {consecutiveIncorrect > 0 && (
+            {/* {consecutiveIncorrect > 0 && (
               <Badge 
                 variant="secondary"
                 className="flex gap-1.5 items-center text-muted-foreground"
@@ -88,8 +95,8 @@ export const FlashcardStats = ({ timesStudied, masteryLevel, consecutiveIncorrec
                   </>
                 )}
               </Badge>
-            )}
-          </div>
+            )} */}
+          {/* </div> */}
         </div>
     )
 }

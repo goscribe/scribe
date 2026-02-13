@@ -51,17 +51,16 @@ export const WorkspaceSidebar = ({
 }: WorkspaceSidebarProps) => {
   return (
     <div className={cn(
-      "bg-background fixed border-r-2 border-border/50 transition-all duration-300 ease-out flex flex-col ",
-      "h-[calc(100vh-3rem)]", // Subtract navbar height and add shadow
-      isCollapsed ? "w-[4.5rem]" : "w-72"
+      "bg-background fixed border-r border-border transition-all duration-300 ease-out flex flex-col",
+      "h-[calc(100vh-3.5rem)]",
+      isCollapsed ? "w-[4.5rem]" : "w-[17rem]"
     )}>
-      {/* Toggle button positioned relative to this fixed container */}
       {children}
-      <div className="border-b border-border/50 bg-muted/5">
+      <div className="border-b border-border">
         <WorkspaceDropdown isCollapsed={isCollapsed} />
       </div>
       
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto py-2">
         <NavigationTabs 
           onTabChange={onTabChange}
           activeTab={activeTab} 
@@ -69,13 +68,11 @@ export const WorkspaceSidebar = ({
         />
         
         {!isCollapsed && (
-          <div className="mt-2">
-            <FilesSection 
-              files={files} 
-              isUploading={isUploading || false} 
-              onUploadClick={onUploadClick || (() => {})} 
-            />
-          </div>
+          <FilesSection 
+            files={files} 
+            isUploading={isUploading || false} 
+            onUploadClick={onUploadClick || (() => {})} 
+          />
         )}
       </div>
     </div>

@@ -1,40 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Brain, Play, ClipboardCheck } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FlashcardCreateModal } from "@/components/modals/flashcard-create-modal";
 import { FlashcardEditModal } from "@/components/modals/flashcard-edit-modal";
 import { LoadingSkeleton } from "@/components/ui/loading-skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useFlashcards } from "@/hooks/use-flashcards";
 import { RouterOutputs } from "@goscribe/server";
 
 type Flashcard = RouterOutputs['flashcards']['listCards'][number];
 import { FlashcardHeader } from "@/components/flashcard/flashcard-header";
-import { FlashcardSearch } from "@/components/flashcard/flashcard-search";
-import { FlashcardTable } from "@/components/flashcard/flashcard-table";
-import { FlashcardDetailSheet } from "@/components/flashcard/flashcard-detail-sheet";
 import { FlashcardCardOverview } from "@/components/flashcard/flashcard-card-overview";
 import { FlashcardGenerateModal } from "@/components/flashcard/flashcard-generate-modal";
+import { FlashcardListView } from "@/components/flashcard/flashcard-list-view";
 
-/**
- * Flashcards panel component for managing and studying flashcards
- * 
- * Features:
- * - List and grid view modes
- * - Create, edit, and delete flashcards
- * - Interactive study mode with flip cards
- * - Real-time updates via Pusher
- * - Search and pagination
- * 
- * @returns JSX element containing the flashcards panel
- */
 export default function FlashcardsPanel() {
   const params = useParams();
-  const router = useRouter();
   const workspaceId = params.id as string;
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -42,12 +27,9 @@ export default function FlashcardsPanel() {
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
 
-  // Custom hook for flashcard operations
   const { 
     cards,
-    selectedCard,
     viewMode,
-    globalFilter,
     isLoading,
     isCreating,
     isUpdating,
@@ -57,89 +39,57 @@ export default function FlashcardsPanel() {
     createCard,
     updateCard,
     deleteCard,
-    selectCard,
     changeViewMode,
-    updateGlobalFilter,
     generateFromPrompt,
     refetch,
   } = useFlashcards(workspaceId);
 
-  /**
-   * Handles creating a new flashcard
-   * @param front - The front text
-   * @param back - The back text
-   */
   const handleCreateCard = (front: string, back: string) => {
     createCard(front, back);
     setIsCreateModalOpen(false);
   };
 
-  /**
-   * Handles updating a flashcard
-   * @param id - The card ID
-   * @param front - The new front text
-   * @param back - The new back text
-   */
   const handleUpdateCard = (id: string, front: string, back: string) => {
     updateCard(id, front, back);
     setIsEditModalOpen(false);
     setEditingCard(null);
   };
 
-  /**
-   * Opens the edit modal for a card
-   * @param card - The card to edit
-   */
   const openEditModal = (card: Flashcard) => {
     setEditingCard(card);
     setIsEditModalOpen(true);
   };
 
-  /**
-   * Handles card deletion
-   * @param cardId - The ID of the card to delete
-   */
   const handleDeleteCard = (cardId: string) => {
     deleteCard(cardId);
-    if (selectedCard?.id === cardId) {
-      selectCard(null);
-    }
   };
 
-  /**
-   * Handles generating flashcards from prompt
-   * @param prompt - The prompt to generate flashcards from
-   */
   const handleGenerateFromPrompt = (prompt: string) => {
     generateFromPrompt(prompt);
     setIsGenerateModalOpen(false);
   };
 
-  // Loading state
   if (isLoading) {
-    return (
-      <LoadingSkeleton 
-        type="flashcards" 
-      />
-    );
+    return <LoadingSkeleton type="flashcards" />;
   }
 
-  // Error state
   if (error) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold">Flashcards</h3>
-            <p className="text-sm text-muted-foreground">
-              Interactive study cards for quick review
-            </p>
-          </div>
-        </div>
+      <div className="max-w-4xl mx-auto py-6 px-4 space-y-4">
+        <FlashcardHeader
+          cardCount={0}
+          viewMode={viewMode}
+          onViewModeChange={changeViewMode}
+          onCreateClick={() => setIsCreateModalOpen(true)}
+          onGenerateClick={() => setIsGenerateModalOpen(true)}
+          isCreating={isCreating}
+          isGenerating={isGenerating}
+          generatingMetadata={generatingMetadata || null}
+        />
         <Card className="border-destructive">
           <CardContent className="p-8 text-center">
-            <p className="text-destructive">Error loading flashcards: {error.message}</p>
-            <Button onClick={() => refetch()} className="mt-2" variant="outline">
+            <p className="text-destructive text-sm">{error.message}</p>
+            <Button onClick={() => refetch()} className="mt-3" variant="outline" size="sm">
               Retry
             </Button>
           </CardContent>
@@ -149,7 +99,7 @@ export default function FlashcardsPanel() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-4xl mx-auto py-6 px-4 space-y-6">
       {/* Header */}
       <FlashcardHeader
         cardCount={cards.length}
@@ -162,14 +112,6 @@ export default function FlashcardsPanel() {
         generatingMetadata={generatingMetadata || null}
       />
 
-      {/* Search Bar for List View */}
-      {viewMode === "list" && cards.length > 0 && (
-        <FlashcardSearch
-          searchValue={globalFilter}
-          onSearchChange={updateGlobalFilter}
-        />
-      )}
-
       {/* Modals */}
       <FlashcardCreateModal
         isOpen={isCreateModalOpen}
@@ -177,7 +119,6 @@ export default function FlashcardsPanel() {
         onCreateCard={handleCreateCard}
         isLoading={isCreating}
       />
-
       <FlashcardEditModal
         isOpen={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
@@ -185,7 +126,6 @@ export default function FlashcardsPanel() {
         flashcard={editingCard}
         isLoading={isUpdating}
       />
-
       <FlashcardGenerateModal
         isOpen={isGenerateModalOpen}
         onOpenChange={setIsGenerateModalOpen}
@@ -204,33 +144,24 @@ export default function FlashcardsPanel() {
             onClick: () => setIsCreateModalOpen(true)
           }}
         />
-      ) : viewMode === "list" ? (
-        <>
-          {/* Table View */}
-          <FlashcardTable
+      ) : (
+        <div className="space-y-8">
+          {/* Flip card preview */}
+          <FlashcardCardOverview
             cards={cards}
-            globalFilter={globalFilter}
-            onGlobalFilterChange={updateGlobalFilter}
-            selectedCard={selectedCard}
-            onCardSelect={selectCard}
+            onEditCard={openEditModal}
           />
 
-          {/* Card Detail Sheet */}
-          <FlashcardDetailSheet
-            selectedCard={selectedCard}
-            onClose={() => selectCard(null)}
-            onUpdateCard={updateCard}
-            onDeleteCard={handleDeleteCard}
-            isUpdating={isUpdating}
-          />
-        </>
-      ) : (
-        /* Card Overview */
-        <FlashcardCardOverview
-          cards={cards}
-          onEditCard={openEditModal}
-        />
+          {/* Card list */}
+          <div>
+            <FlashcardListView
+              cards={cards}
+              onCardSelect={openEditModal}
+              onDeleteCard={handleDeleteCard}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
-};
+}

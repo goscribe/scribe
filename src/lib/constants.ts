@@ -114,7 +114,7 @@ export const STORAGE_KEYS = {
  * API endpoints (if not using tRPC)
  */
 export const API_ENDPOINTS = {
-  BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  BASE_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''),
   TRPC: '/trpc',
 } as const;
 

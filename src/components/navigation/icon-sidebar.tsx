@@ -44,8 +44,8 @@ export function IconSidebar() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside className="bg-background fixed left-0 top-0 z-20 flex h-full w-14 flex-col items-center border-r border-border pt-16 pb-8">
-        <nav className="flex flex-1 flex-col items-center gap-3">
+      <aside className="bg-background fixed left-0 top-0 z-20 flex h-full w-14 flex-col items-center border-r border-border pt-16 pb-4">
+        <nav className="flex flex-1 flex-col items-center gap-1 px-2">
           {sidebarItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             const Icon = item.icon;
@@ -56,67 +56,67 @@ export function IconSidebar() {
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
+                      "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
                       isActive
-                        ? "bg-primary/10 text-primary shadow-sm"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        ? "bg-secondary text-secondary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     )}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4" />
                     <span className="sr-only">{item.name}</span>
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{item.name}</p>
+                <TooltipContent side="right" sideOffset={6}>
+                  {item.name}
                 </TooltipContent>
               </Tooltip>
             );
           })}
         </nav>
 
-        {/* Settings at bottom */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link
-              href="/settings"
-              className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
-                isSettingsActive
-                  ? "bg-primary/10 text-primary shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              )}
-            >
-              <Settings className="h-5 w-5" />
-              <span className="sr-only">Settings</span>
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p>Settings</p>
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Profile Picture with Sign Out */}
-        {session?.user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="mt-3 flex h-10 w-10 items-center justify-center rounded-full hover:opacity-80 transition-opacity">
-                <ProfilePicture id={session.user.id || ""} name={session.user.name || "User"} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="end">
-              <DropdownMenuItem 
-                className="cursor-pointer text-destructive focus:text-destructive" 
-                onClick={async () => {
-                  await signOutMutation.mutateAsync();
-                  router.push('/');
-                }}
+        <div className="flex flex-col items-center gap-1 px-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/settings"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+                  isSettingsActive
+                    ? "bg-secondary text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                <Settings className="h-4 w-4" />
+                <span className="sr-only">Settings</span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={6}>
+              Settings
+            </TooltipContent>
+          </Tooltip>
+
+          {session?.user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="mt-1 flex h-8 w-8 items-center justify-center rounded-full overflow-hidden ring-1 ring-border hover:ring-ring transition-colors">
+                  <ProfilePicture id={session.user.id || ""} name={session.user.name || "User"} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" sideOffset={6}>
+                <DropdownMenuItem 
+                  className="cursor-pointer text-destructive focus:text-destructive" 
+                  onClick={async () => {
+                    await signOutMutation.mutateAsync();
+                    router.push('/');
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </aside>
     </TooltipProvider>
   );

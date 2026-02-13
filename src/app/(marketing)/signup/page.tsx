@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc";
 
@@ -15,10 +15,11 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [signupComplete, setSignupComplete] = useState(false);
 
   const { mutate: signupMutation, isPending: isLoading } = trpc.auth.signup.useMutation({
     onSuccess: () => {
-      router.push("/login");
+      setSignupComplete(true);
     },
     onError: (error) => {
       setError(error.message || "Something went wrong. Please try again.");
@@ -40,6 +41,60 @@ export default function SignupPage() {
       password,
     });
   };
+
+  if (signupComplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Mail className="h-6 w-6 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold">Check your email</h1>
+            <p className="text-sm text-muted-foreground">
+              We sent a verification link to <span className="font-medium text-foreground">{email}</span>.
+              Click the link to verify your account.
+            </p>
+          </div>
+          <div className="space-y-2 pt-2">
+            <Link href="/login">
+              <Button className="w-full">Go to Sign In</Button>
+            </Link>
+            <p className="text-xs text-muted-foreground">
+              Didn&apos;t receive the email? Check your spam folder.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (signupComplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-sm space-y-6 text-center">
+          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Mail className="h-6 w-6 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold">Check your email</h1>
+            <p className="text-sm text-muted-foreground">
+              We sent a verification link to <span className="font-medium text-foreground">{email}</span>.
+              Click the link to verify your account.
+            </p>
+          </div>
+          <div className="space-y-2 pt-2">
+            <Link href="/login">
+              <Button className="w-full">Go to Sign In</Button>
+            </Link>
+            <p className="text-xs text-muted-foreground">
+              Didn&apos;t get the email? Check your spam folder.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">

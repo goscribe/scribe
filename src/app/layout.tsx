@@ -30,7 +30,7 @@ export default function RootLayout({
       <meta name="apple-mobile-web-app-title" content="Scribe" />
 
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background/70`}>
         <Providers>
           <ConditionalNav>
             {children}

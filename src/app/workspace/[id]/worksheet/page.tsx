@@ -50,10 +50,7 @@ export default function WorksheetPanel() {
     incorrectAnswers
   } = useWorksheet(workspaceId);
 
-  console.log('correctAnswers', correctAnswers);
-  console.log('incorrectAnswers', incorrectAnswers);
-
-  // // Loading state
+  // Loading state
   if (isLoading) {
     return (
       <LoadingSkeleton 
@@ -68,7 +65,7 @@ export default function WorksheetPanel() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold">Worksheets</h3>
+            <h3 className="text-lg font-bold">Worksheets</h3>
             <p className="text-sm text-muted-foreground">
               Practice exercises and problems to test your knowledge
             </p>
@@ -93,7 +90,7 @@ export default function WorksheetPanel() {
       {/* Header with title and create button */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-medium">Worksheets</h3>
+          <h3 className="text-lg font-bold">Worksheets</h3>
           <p className="text-sm text-muted-foreground">
             {worksheets?.length} worksheet{worksheets?.length !== 1 ? 's' : ''}
           </p>

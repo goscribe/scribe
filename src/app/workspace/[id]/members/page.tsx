@@ -66,7 +66,7 @@ export default function MembersPage() {
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-2">
             <Users className="h-6 w-6 text-primary" />
-            <h1 className="text-3xl font-semibold text-foreground">Members</h1>
+            <h1 className="text-lg font-bold">Members</h1>
           </div>
           <p className="text-muted-foreground text-sm">
             Manage workspace members and permissions

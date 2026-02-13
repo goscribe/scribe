@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { trpc } from "@/lib/trpc";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Textarea } from "../ui/textarea";
 
 export default function CreateFileModal({
@@ -18,12 +18,17 @@ export default function CreateFileModal({
 }) {
     const [fileName, setFileName] = useState("");
     const [description, setDescription] = useState("");
+    const router = useRouter();
 
     const { folderId } = useParams();
 
     const createFileMutation = trpc.workspace.create.useMutation({
-        onSuccess: () => {
+        onSuccess: (data) => {
             onSuccess();
+            // Navigate to the newly created workspace
+            if (data?.id) {
+                router.push(`/workspace/${data.id}`);
+            }
         }
     });
 

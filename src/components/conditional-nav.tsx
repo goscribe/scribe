@@ -6,8 +6,9 @@ import { Navbar } from "@/components/navigation/navbar";
 import { IconSidebar } from "@/components/navigation/icon-sidebar";
 import { LandingHeader } from "@/components/navigation/landing-header";
 import { ScribeLoader } from "@/components/branding/scribe-loader";
+import { VerifyEmailBanner } from "@/components/verify-email-banner";
 
-const PUBLIC_PATHS = ["/", "/landing", "/about", "/pricing", "/press", "/login", "/signup"];
+const PUBLIC_PATHS = ["/", "/landing", "/about", "/pricing", "/press", "/login", "/signup", "/verify-email"];
 
 export function ConditionalNav({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -47,7 +48,8 @@ export function ConditionalNav({ children }: { children: React.ReactNode }) {
       <div className="h-full overflow-hidden">
         <Navbar />
         <IconSidebar />
-        <div className="h-full overflow-hidden pt-14">
+        <div className="h-full overflow-hidden ml-14 pt-14">
+          <VerifyEmailBanner />
           {children}
         </div>
       </div>

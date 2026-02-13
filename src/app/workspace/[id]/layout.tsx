@@ -42,6 +42,7 @@ interface WorkspaceLayoutProps {
 export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
   // State management
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Next.js hooks
   const router = useRouter();
@@ -78,12 +79,20 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   return (
     <div 
-    // isCollapsed ? "w-[4.5rem]" : "w-72"
-      className={cn("flex ml-16 h-full overflow-hidden")}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      className={cn("flex h-full shrink-0 overflow-hidden relative")}
+      onDragOver={(e) => { handleDragOver(e); setIsDragOver(true); }}
+      onDragLeave={(e) => { handleDragLeave(e); setIsDragOver(false); }}
+      onDrop={(e) => { handleDrop(e); setIsDragOver(false); }}
     >
+      {/* Drag-and-drop overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 bg-primary/5 border-2 border-dashed border-primary/40 rounded-lg flex items-center justify-center pointer-events-none">
+          <div className="bg-background/90 backdrop-blur-sm rounded-xl px-6 py-4 shadow-lg text-center">
+            <p className="text-sm font-medium text-primary">Drop files to upload</p>
+            <p className="text-xs text-muted-foreground mt-1">PDF, images, and documents supported</p>
+          </div>
+        </div>
+      )}
       {/* Workspace Sidebar with navigation and file management */}
       <WorkspaceSidebar 
         onTabChange={(tab) => {
@@ -103,8 +112,10 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
       </WorkspaceSidebar>
       
       {/* Main Content Area */}
-      <main className="flex-1 overflow-auto"       style={{ marginLeft: isSidebarCollapsed ? "4.5rem" : "18rem" /* 4rem + 18rem */ }}
-      >
+      <main className={cn(
+        "flex-1 overflow-auto transition-[margin-left] duration-300 ease-out",
+        isSidebarCollapsed ? "ml-[4.5rem]" : "ml-[17rem]"
+      )}>
         {/* Hidden File Input for programmatic file selection */}
         <input
           id="sidebar-file-upload"

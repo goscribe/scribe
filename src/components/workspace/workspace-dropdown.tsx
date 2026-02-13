@@ -65,84 +65,97 @@ export const WorkspaceDropdown = ({ isCollapsed }: WorkspaceDropdownProps) => {
   });
 
   return (
-    <div className={cn("p-2", isCollapsed ? "flex items-center justify-center" : "")}>
+    <div className={cn("px-3 py-3", isCollapsed ? "flex items-center justify-center px-2" : "")}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {isCollapsed ? (
             <button
-              className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-md hover:bg-accent transition-colors"
               title={workspace?.title || 'Workspace'}
             >
               {workspaceLoading ? (
-                <Skeleton className="w-5 h-5" />
+                <Skeleton className="w-7 h-7 rounded-md" />
               ) : (
-                <span className="text-lg leading-none rounded-md w-8 h-8 flex items-center justify-center" style={{
-                  backgroundColor: hexToRgba(workspace?.color || '#6366f1', 0.3),
+                <span className="text-xs font-bold rounded-md w-7 h-7 flex items-center justify-center" style={{
+                  backgroundColor: hexToRgba(workspace?.color || '#6366f1', 0.12),
                   color: workspace?.color,
                 }}>
-                  {workspace?.title?.charAt(0)}
+                  {workspace?.title?.charAt(0).toUpperCase()}
                 </span>
               )}
             </button>
           ) : (
-            <button className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted transition-colors">
+            <button className="w-full flex items-center gap-3 hover:bg-accent rounded-md px-1.5 py-1 transition-colors text-left">
               {workspaceLoading ? (
-                <Skeleton className="w-5 h-5" />
+                <Skeleton className="w-8 h-8 rounded-lg" />
               ) : (
-                <span className="text-lg leading-none rounded-md w-6 h-6 flex items-center justify-center" style={{
-                  backgroundColor: hexToRgba(workspace?.color || '#6366f1', 0.3),
+                <span className="text-sm font-bold rounded-lg w-8 h-8 flex items-center justify-center shrink-0" style={{
+                  backgroundColor: hexToRgba(workspace?.color || '#6366f1', 0.12),
                   color: workspace?.color,
                 }}>
-                  {workspace?.title?.charAt(0)}
+                  {workspace?.title?.charAt(0).toUpperCase()}
                 </span>
               )}
-              <div className="flex-1 text-left min-w-0">
+              <div className="flex-1 min-w-0">
                 {workspaceLoading ? (
                   <Skeleton className="w-full h-4" />
                 ) : (
-                  <div className="font-medium text-sm truncate">{workspace?.title}</div>
+                  <span className="font-semibold text-[13px] truncate block">{workspace?.title}</span>
                 )}
               </div>
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             </button>
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-80" align="start">
-          <div className="p-2">
+        <DropdownMenuContent className="w-72" align="start" sideOffset={4}>
+          <div className="p-1.5">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search notes..."
+                placeholder="Search workspaces..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 h-9 bg-muted/50 border-0 focus-visible:ring-1"
+                className="pl-8 h-8 text-sm bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
           </div>
-          <div className="max-h-60 overflow-y-auto">
+          <div className="max-h-60 overflow-y-auto p-1">
             {filteredWorkspacesLoading && (
-              <div className="flex flex-col gap-2 p-2">
+              <div className="flex flex-col gap-1 p-1">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex flex-col gap-2 p-2">
-                    <Skeleton className="w-full h-4" />
-                    <Skeleton className="w-3/4 h-3" />
+                  <div key={i} className="flex items-center gap-2 p-2">
+                    <Skeleton className="w-6 h-6 rounded" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="w-3/4 h-3.5" />
+                      <Skeleton className="w-1/2 h-2.5" />
+                    </div>
                   </div>
                 ))}
               </div>
             )}
             {filteredWorkspaces?.length === 0 && !filteredWorkspacesLoading && (
-              <div className="p-4 text-center">
-                <p className="text-sm text-muted-foreground">No workspaces found</p>
+              <div className="py-4 text-center">
+                <p className="text-xs text-muted-foreground">No workspaces found</p>
               </div>
             )}
-            {filteredWorkspaces?.map((workspace) => (
+            {filteredWorkspaces?.map((ws) => (
               <DropdownMenuItem
-                key={workspace.id}
-                onClick={() => router.push(`/workspace/${id}/${workspace.id}`)}
-                className="flex flex-col items-start p-2 m-1 cursor-pointer rounded-md"
+                key={ws.id}
+                onClick={() => router.push(`/workspace/${ws.id}`)}
+                className="flex items-center gap-2.5 p-2 cursor-pointer rounded-md"
               >
-                <div className="font-medium text-sm">{workspace.title}</div>
-                <div className="text-xs text-muted-foreground capitalize">{workspace.description}</div>
+                <span className="text-[10px] font-semibold rounded w-6 h-6 flex items-center justify-center shrink-0" style={{
+                  backgroundColor: hexToRgba(ws.color || '#6366f1', 0.15),
+                  color: ws.color || '#6366f1',
+                }}>
+                  {ws.title?.charAt(0).toUpperCase()}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{ws.title}</div>
+                  {ws.description && (
+                    <div className="text-xs text-muted-foreground truncate">{ws.description}</div>
+                  )}
+                </div>
               </DropdownMenuItem>
             ))}
           </div>

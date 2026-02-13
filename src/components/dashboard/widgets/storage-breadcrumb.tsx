@@ -35,7 +35,7 @@ export function StorageBreadcrumb({ items, onNavigate }: StorageBreadcrumbProps)
     if (onNavigate) {
       onNavigate(folderId);
     } else {
-      router.push(`/storage/workspaces/${folderId}`);
+      router.push(`/storage/folder/${folderId}`);
     }
   };
 
@@ -76,7 +76,7 @@ export function StorageBreadcrumb({ items, onNavigate }: StorageBreadcrumbProps)
                   </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink
-                    href={`/storage/workspaces/${item.id}`}
+                    href={`/storage/folder/${item.id}`}
                     className="text-sm text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.preventDefault();

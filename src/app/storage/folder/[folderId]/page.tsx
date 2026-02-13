@@ -86,7 +86,7 @@ export default function WorkspacesPage() {
   };
 
   const handleFolderClick = (folderId: string) => {
-    router.push(`/storage/workspaces/${folderId}`);
+    router.push(`/storage/folder/${folderId}`);
   };
 
   const filteredFiles = files.filter(file =>
@@ -119,7 +119,7 @@ export default function WorkspacesPage() {
         <div className="mb-6">
           <StorageBreadcrumb 
             items={breadcrumbItems}
-            onNavigate={(folderId) => router.push(`/storage/workspaces/${folderId}`)}
+            onNavigate={(folderId) => router.push(`/storage/folder/${folderId}`)}
           />
         </div>
         <div className="text-center py-12">
@@ -139,7 +139,7 @@ export default function WorkspacesPage() {
       <div className="mb-6">
         <StorageBreadcrumb 
           items={breadcrumbItems}
-          onNavigate={(folderId) => router.push(`/storage/workspaces/${folderId}`)}
+          onNavigate={(folderId) => router.push(`/storage/folder/${folderId}`)}
         />
       </div>
 

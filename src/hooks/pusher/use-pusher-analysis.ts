@@ -44,7 +44,7 @@ export function usePusherAnalysis({
 
 
     const channelName = `workspace_${workspaceId}`;
-    console.log('[Analysis] Subscribing to channel:', channelName);
+    // Subscribe to analysis channel
     
     const channel = pusher.subscribe(channelName);
     
@@ -53,7 +53,7 @@ export function usePusherAnalysis({
     
     // Track connection state
     channel.bind('pusher:subscription_succeeded', () => {
-      console.log('[Analysis] Successfully connected to channel:', channelName);
+      // Connected to analysis channel
       setIsConnected(true);
     });
     
@@ -63,7 +63,7 @@ export function usePusherAnalysis({
     });
 
     return () => {
-      console.log('[Analysis] Unsubscribing from channel:', channelName);
+      // Unsubscribe from analysis channel
       channel.unbind('analysis_progress', handleProgressUpdate);
       channel.unbind('pusher:subscription_succeeded');
       channel.unbind('pusher:subscription_error');

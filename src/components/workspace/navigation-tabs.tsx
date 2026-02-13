@@ -63,15 +63,15 @@ const tabs = [
     icon: Podcast,
     description: 'Audio content and transcripts'
   },
-  {
-    section: 'Communication'
-  },
-  {
-    id: 'chat' as WorkspaceTab,
-    label: 'Chat',
-    icon: MessageCircle,
-    description: 'Real-time messaging and collaboration'
-  },
+  // {
+  //   section: 'Communication'
+  // },
+  // {
+  //   id: 'chat' as WorkspaceTab,
+  //   label: 'Chat',
+  //   icon: MessageCircle,
+  //   description: 'Real-time messaging and collaboration'
+  // },
   {
     section: 'Workspace'
   },
@@ -101,18 +101,20 @@ const tabs = [
 export const NavigationTabs = ({ activeTab, onTabChange, isCollapsed }: NavigationTabsProps) => {
   return (
     <TooltipProvider delayDuration={300}>
-      <nav className={cn(isCollapsed ? "px-1 flex flex-col items-center" : "px-2")}>
+      <nav className={cn(isCollapsed ? "px-1.5 flex flex-col items-center gap-0.5" : "px-2")}>
         {tabs.map((tab, index) => {
           // Section header
           if ('section' in tab) {
             if (isCollapsed) {
-              return <div key={`section-${index}`} className="h-px bg-border my-3 w-8" />;
+              return <div key={`section-${index}`} className="h-px bg-border my-1.5 w-7" />;
             }
+            // First section gets less top padding
+            const isFirst = index === 0 || (index === 1 && tabs[0] && 'invisible' in tabs[0]);
             return (
-              <div key={`section-${index}`} className={`px-2 pt-4 pb-2`}>
-                <div className="text-xs font-semibold text-muted-foreground">
+              <div key={`section-${index}`} className={cn("px-3 pb-0.5", isFirst ? "pt-1" : "pt-3")}>
+                <span className="text-[11px] font-medium text-muted-foreground">
                   {tab.section}
-                </div>
+                </span>
               </div>
             );
           }
@@ -130,40 +132,27 @@ export const NavigationTabs = ({ activeTab, onTabChange, isCollapsed }: Navigati
                 <button
                   onClick={() => onTabChange(tab.id!)}
                   className={cn(
-                    "flex items-center rounded-lg transition-all duration-200 mb-0.5 group",
-                    isCollapsed ? "justify-center w-11 h-11" : "w-full gap-3 px-3 py-2.5 text-left",
+                    "flex items-center rounded-md transition-colors",
+                    isCollapsed ? "justify-center w-9 h-9" : "w-full gap-2 px-3 py-1.5 text-left",
                     isActive
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-muted/60 text-muted-foreground hover:text-foreground"
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
                   )}
                 >
                   <Icon className={cn(
-                    "h-4 w-4 flex-shrink-0 transition-transform duration-200",
-                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
-                    !isCollapsed && "group-hover:scale-110"
+                    "h-4 w-4 flex-shrink-0",
+                    isActive ? "text-primary" : "text-muted-foreground",
                   )} />
                   {!isCollapsed && (
-                    <div className="flex-1 min-w-0">
-                      <div className={cn(
-                        "text-sm transition-colors duration-200",
-                        isActive ? "font-semibold text-primary" : "text-muted-foreground group-hover:text-foreground"
-                      )}>
-                        {tab.label}
-                      </div>
-                    </div>
+                    <span className="text-sm truncate">
+                      {tab.label}
+                    </span>
                   )}
                 </button>
               </TooltipTrigger>
-              {!isCollapsed && (
-                <TooltipContent side="right" className="text-xs">
-                  {tab.description}
-                </TooltipContent>
-              )}
-              {isCollapsed && (
-                <TooltipContent side="right" className="text-xs">
-                  {tab.label}
-                </TooltipContent>
-              )}
+              <TooltipContent side="right" sideOffset={6}>
+                {isCollapsed ? tab.label : tab.description}
+              </TooltipContent>
             </Tooltip>
           );
         })}

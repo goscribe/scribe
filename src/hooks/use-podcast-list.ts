@@ -94,16 +94,16 @@ export const usePodcastList = ({
 
     // Log state changes for debugging
     if (latestPodcastInfo) {
-      console.log('Podcast info updated:', latestPodcastInfo);
+      // Podcast info updated
     }
     
     if (lastCompleted) {
-      console.log('Podcast completed:', lastCompleted);
+      // Podcast completed
       setIsGenerating(false);
     }
     
     if (lastError) {
-      console.log('Podcast error:', lastError);
+      // Podcast error handled via toast
       setIsGenerating(false);
     }
   }, [pusherState, enableRealtime]);
